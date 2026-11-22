@@ -15,8 +15,6 @@ A private notes app in a single HTML file. No account, no cloud, no server, no i
 
 <br>
 
-<img src="docs/home-light.png" alt="Localnotes home screen in light mode" width="92%">
-
 <br><br>
 
 <img src="docs/canvas-dark.png" alt="The Canvas in dark mode: messy points on the left, sorted by AI into checklists" width="92%">
