@@ -1,79 +1,150 @@
+<div align="center">
+
 # Localnotes
 
-A private, local-first notes app in a single HTML file. Write anything on the Canvas, and a local AI (through Ollama, optional) groups it by topic into checklists filed in your spaces. Ask questions of your own notes. Set reminders on a calendar.
+**Dump your messy thoughts. A local AI sorts them. Nothing ever leaves your computer.**
 
-No build step, no account, no server. Your notes stay in your browser on your computer.
+A private notes app in a single HTML file. No account, no cloud, no server, no install.
 
-## Features
-- **Canvas (main feature):** a blank sheet for dumping anything in any order. Each line is one point. "Organise with AI" sorts the points by topic: one note per topic, one checklist line per point, filed in a space. Deadlines in a point ("by 30 Nov", "due Friday", "tomorrow", "2026-12-03") become a reminder on that note. Undo reverses an organise.
-- **Ask your notes:** answers come only from your notes, and each answer lists the notes it used. Date words narrow the search: "today", "last week", "this month", "last 3 months", "in March".
-- **Spaces:** a collapsible tree in the sidebar. Click a name to list its notes; click the arrow to fold it away.
-- **Rich-text notes:** bold, italic, underline, strikethrough, headings, quotes, bullet and numbered lists, checkbox to-dos, colours, highlights, links, undo/redo.
-- **Reminders:** set a "Remind me" date on any note. The home page shows a month calendar with a dot on each day that has reminders, and a short "Coming up" list (overdue items first, then the next two weeks).
-- **Export:** Markdown (one folder of .md files grouped by space, or one .md file), encrypted backup, or plain JSON backup.
-- **Import:** restores JSON and encrypted backups.
-- **Local AI (optional):** summarise, fix grammar, pull out action items, suggest a title. You review each result before anything changes.
+[![License: MIT](https://img.shields.io/badge/license-MIT-2b6e5a.svg)](LICENSE)
+[![No build step](https://img.shields.io/badge/build-none-2b6e5a.svg)](#quick-start)
+[![Zero dependencies](https://img.shields.io/badge/dependencies-zero-2b6e5a.svg)](#why-trust-it)
+[![Works offline](https://img.shields.io/badge/works-offline-2b6e5a.svg)](#privacy)
+
+[**Try it in 30 seconds**](#quick-start) · [Privacy](#privacy) · [Why trust it](#why-trust-it) · [Honest limits](#what-it-does-not-do-yet)
+
+<br>
+
+<img src="docs/home-light.png" alt="Localnotes home screen in light mode" width="92%">
+
+<br><br>
+
+<img src="docs/canvas-dark.png" alt="The Canvas in dark mode: messy points on the left, sorted by AI into checklists" width="92%">
+
+</div>
+
+---
+
+## Why Localnotes
+
+Most notes apps want an account, a subscription and a copy of your thoughts on someone else's server. Localnotes takes the opposite approach:
+
+- **Everything stays on your device.** Notes live in your browser. The AI runs on your machine through [Ollama](https://ollama.com).
+- **One file.** The whole app is `index.html`. Read it, fork it, or run it from a USB stick.
+- **Zero dependencies, zero build.** No npm, no bundler, no framework. Double-click and it runs.
+- **The canvas is the main feature.** Write anything in any order. The AI groups the points by topic, creates one checklist per topic, and files it in a space.
+
+## Quick start
+
+```bash
+git clone https://github.com/YOUR-USERNAME/localnotes.git
+cd localnotes
+python3 -m http.server 8000   # any static server works
+```
+
+Open **http://localhost:8000**. That's it.
+
+Want the AI too? Install [Ollama](https://ollama.com), then:
+
+```bash
+ollama pull llama3.2
+```
+
+In Localnotes, open **AI setup** and press **Test connection**. Any model you have downloaded works. Cloud models are never used.
+
+> You can also double-click `index.html`. Some features, including the AI, work best through a local server.
 
 ## Privacy
-- Notes are saved only in this browser on this computer.
-- The AI runs on your computer through Ollama. Nothing is sent to a server.
-- The app makes no network requests except to the local Ollama address you set. This was checked by recording the network hosts the page contacts (only localhost).
 
-## Backups and portability
-- **Markdown** is the portable format. Each file has front matter with the title, space, dates and any reminder. Use it to move notes into another app.
-- **Encrypted backup** (`.localnotes`): the whole notebook is encrypted with AES-256-GCM. The key is derived from your passphrase with PBKDF2-SHA-256 (310,000 iterations). Without the passphrase the file cannot be read. Choose a passphrase you will remember: if you forget it, the backup cannot be recovered.
-- **Plain JSON** is readable by anyone who has the file. Keep it somewhere safe.
+Localnotes is built so you don't have to trust a promise. You can check it.
+
+| | Typical cloud notes app | **Localnotes** |
+|---|---|---|
+| Account needed | Yes | **No** |
+| Where notes are stored | Vendor's servers | **Your browser, on your device** |
+| AI processing | Vendor's cloud | **Your computer, through Ollama** |
+| Network requests | Constant, to the vendor | **Only to the Ollama address you set** |
+| Tracking or analytics | Usually | **None** |
+| Works with the Wi-Fi off | Partly | **Yes** |
+
+**Verify it yourself:**
+
+```bash
+python3 tests/suite7.py http://localhost:8000/index.html
+```
+
+This records every network request the app makes during a real session and fails if any of them leave your machine. Or open your browser's Network tab and use the app.
+
+## Features
+
+- **Canvas**: a blank sheet for brain-dumps. "Organise with AI" sorts points by topic, files them in spaces, and turns deadlines into reminders. Undo reverts it.
+- **Ask your notes**: ask "what did I do last month on fundraising?" Answers come only from your notes, and each one lists the notes it used.
+- **Reminders**: set a date on any note. A calendar on the home page shows what's coming up.
+- **Rich text**: bold, italic, underline, headings, lists, checkboxes, colours, highlights and links.
+- **Spaces**: collapsible folders in the sidebar. Click a name to see its notes.
+- **Light and dark mode**, with your choice remembered.
+- **Export and backup**: Markdown (one folder of `.md` files, or one file), encrypted backups, or plain JSON. Your notes are never locked in.
+
+## Your data, your control
+
+- **Encrypted backups** use AES-256-GCM, with a key derived from your passphrase by PBKDF2-SHA-256 (310,000 iterations). The browser's own crypto library does the work.
+- **Markdown export** keeps your notes readable in any editor, with front matter for titles, spaces, dates and reminders.
+- **Nothing is hidden.** It's one HTML file with no minified bundles. Anyone can read exactly what runs.
+
+## Why trust it
+
+- **Read it in one sitting.** The entire app is `index.html`.
+- **Strict Content Security Policy.** Scripts and connections are limited to this page and your local Ollama address.
+- **Note text is never rendered as HTML.** Titles, search results, chat answers and AI replies are escaped or written as plain text. Pasted and imported rich text passes through a whitelist that removes scripts.
+- **Tested.** Six suites cover editing, canvas organising, the AI (against a stub), export and encryption, reminders, delete, reset, and the privacy check. Run them with the commands in [`tests/`](tests).
+- **Security policy.** See [SECURITY.md](SECURITY.md) for the threat model and how to report a vulnerability.
 
 ## What it does not do yet
-Stated plainly, so you know what to expect:
-- **No sync.** Notes live in one browser on one computer. There is no way to see them on another device.
-- **No mobile app.** The page works in a phone browser, but it is designed for a computer and is not tested as an app.
-- **No live folder sync.** Markdown export is a copy. Changes you make to the .md files are not read back.
-- **Reminders only show while the page is open.** There are no notifications, and nothing fires when the tab is closed.
-- **Encryption covers backups only.** Notes are stored unencrypted in the browser's own storage on your computer, as any browser data is.
-- **Browser storage can be lost.** Clearing site data, using a private window, or uninstalling the browser deletes notes. Export a backup regularly.
-- **Chrome and Edge only.** Folder export needs the File System Access API, which other browsers lack. Other features may work elsewhere but are not tested.
-- **No images, attachments or drawings.** Text and checklists only.
-- **Dates are read in English.** "30 Nov", "November 30", weekdays, "tomorrow", "in 3 days" and ISO dates are understood. Numeric dates such as 03/12 are not, so write the month name or the ISO date.
-- **Sorting depends on the AI.** The model decides which points share a topic. Deadlines are read by the app itself, not the model. Check the result after organising.
-- **Search is keyword-based.** It does not understand synonyms, so ask with the words you used in your notes.
-- **The AI has been tested against a stub, not a real model.** The checks confirm what the app sends and how it handles replies. The quality of answers from a real Ollama model has not been measured here.
-- **Not security-audited.** It is a careful personal project, not a reviewed product. Do not rely on it for information that needs certified protection.
 
-## Running it
-Easiest: double-click `index.html`. For the most reliable behaviour, and for Ollama, serve the folder:
+Stated plainly, so you can decide if it fits:
 
-    python -m http.server 8000
+- **No sync between devices.** Your notes live in one browser on one computer.
+- **No mobile app.** The page works in a phone browser but isn't designed for it.
+- **Reminders appear only while the page is open.** There are no notifications.
+- **Encryption covers backups only.** Notes are stored unencrypted in your browser on your computer.
+- **Clearing site data deletes your notes.** Export a backup regularly.
+- **Chrome and Edge are the tested browsers.** Folder export needs the File System Access API.
+- **No images or attachments.** Text, checklists and links only.
+- **Keyword search.** It doesn't understand synonyms, so use the words you wrote.
+- **The AI was tested against a stub, not a real model.** The quality of answers from your model hasn't been measured.
+- **Not audited.** It's a careful open project, not a reviewed product.
 
-then open http://localhost:8000.
+## How it's built
 
-## Ollama (optional)
-1. Install Ollama and pull a model, for example `ollama pull llama3.2`.
-2. Start Ollama.
-3. In Localnotes, click the AI status pill (or "AI setup") and press "Test connection".
+```
+index.html          the whole app (HTML, CSS and JavaScript)
+docs/               screenshots
+tests/              Playwright suites, an Ollama stand-in, and sample data
+SECURITY.md         threat model and reporting
+LICENSE             MIT
+```
 
-If the test fails while Ollama is running, the page is probably being refused. Add the page's address to `OLLAMA_ORIGINS` (for example `OLLAMA_ORIGINS=http://localhost:8000`), restart Ollama, and reload. Do not use a wildcard origin on an untrusted network.
+Notes are stored in IndexedDB. The AI calls only `POST /api/generate` and `GET /api/tags` on the Ollama address you configure.
 
-## How the chat finds notes
-Matching is by date first, then by word overlap with your question (simple stemming: "fundraising" matches "fundraise"). Up to 15 matching notes go to the model, and each answer shows which were used. If nothing matches, the app says so without calling the model.
+## Contributing
 
-## Tests
-The tests use Playwright with the installed Chrome channel, from the `tests/` folder.
+Pull requests are welcome, especially for:
 
-    pip install playwright
-    python3 -m http.server 8765        # from the repository root, in another terminal
-    cd tests
-    python3 stub2.py 11434 &           # stand-in Ollama, working
-    python3 stub2.py 11435 bad &       # stand-in Ollama, returns bad replies
-    python3 suite2.py http://localhost:8765/index.html   # notes, spaces, export/import, Ollama, mobile
-    python3 suite3.py                  # canvas, organise, undo, chat
-    python3 suite4.py                  # Markdown, encrypted backup, reminders
+- testing the AI against real models, and sharing what works well
+- accessibility and keyboard support
+- import and export formats
+- translations
 
-The `LOCALNOTES_URL` environment variable can point suite3 at another address.
-
-
-## Security and privacy checks
-See [SECURITY.md](SECURITY.md) for the threat model and how to verify the claims. In short: run `python3 tests/suite7.py http://localhost:8765/index.html` (with the server running). It records every network request and fails if any leaves your machine.
+Before you open a PR, run the suites in [`tests/`](tests) and make sure the privacy check still passes.
 
 ## Licence
-MIT. See [LICENSE](LICENSE).
+
+[MIT](LICENSE). Use it, change it, ship it.
+
+---
+
+<div align="center">
+
+If Localnotes helps you think, a ⭐ helps others find it.
+
+</div>
