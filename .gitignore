@@ -5,5 +5,4 @@ stub_*_calls.log
 out_*.md
 out_*.localnotes
 backup_test.json
-*.png
 .DS_Store
