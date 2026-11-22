@@ -1,0 +1,1687 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'; connect-src 'self' http://localhost:* http://127.0.0.1:*">
+<title>Localnotes — Private notes, organised by AI</title>
+<style>
+/* Localnotes: a quiet, neutral interface. One ink colour for actions; everything else is hairlines and whitespace. */
+:root{
+  --bg:#fbfbfa; --panel:#ffffff; --side:#f5f5f3;
+  --ink:#1b1b19; --ink2:#4d4d48; --muted:#8a8a83;
+  --line:#e7e7e3; --line2:#d5d5cf; --hover:#f0f0ed; --hover2:#e8e8e4;
+  --accent:#1b1b19; --accent-ink:#fbfbfa;
+  --danger:#b42318; --amber:#8a5a00;
+  --shadow:0 1px 2px rgba(0,0,0,.04);
+  --shadow-lg:0 12px 32px -12px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.05);
+  --sans:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:10px; --r-sm:8px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#161615; --panel:#1d1d1c; --side:#1a1a19;
+    --ink:#ecece8; --ink2:#b9b9b3; --muted:#84847d;
+    --line:#2b2b29; --line2:#3a3a37; --hover:#252523; --hover2:#2e2e2b;
+    --accent:#ecece8; --accent-ink:#161615;
+    --danger:#f97066; --amber:#e0b15a;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+    --shadow-lg:0 16px 40px -12px rgba(0,0,0,.6);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#161615; --panel:#1d1d1c; --side:#1a1a19;
+  --ink:#ecece8; --ink2:#b9b9b3; --muted:#84847d;
+  --line:#2b2b29; --line2:#3a3a37; --hover:#252523; --hover2:#2e2e2b;
+  --accent:#ecece8; --accent-ink:#161615; --danger:#f97066; --amber:#e0b15a;
+  --shadow:0 1px 2px rgba(0,0,0,.3); --shadow-lg:0 16px 40px -12px rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:14px/1.55 var(--sans);-webkit-font-smoothing:antialiased;font-feature-settings:"cv11","ss01"}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;transition:background .15s,color .15s,border-color .15s,opacity .15s}
+button:disabled{cursor:wait;opacity:.5}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.hide{display:none!important}
+.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.ic-sm{width:12px;height:12px;vertical-align:-1px}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+
+/* layout */
+.app{height:100vh;min-height:560px;display:grid;grid-template-columns:248px minmax(0,1fr)}
+.sidebar{background:var(--side);border-right:1px solid var(--line);padding:16px 12px 12px;display:flex;flex-direction:column;gap:12px;min-height:0;overflow:hidden}
+.sidebar>*{flex:none}
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--bg)}
+.topbar{height:52px;flex:none;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 28px;border-bottom:1px solid var(--line)}
+.topbar-left{display:flex;align-items:center;gap:10px;min-width:0}
+.crumb{font-weight:500;font-size:13.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-actions{display:flex;align-items:center;gap:12px}
+.menu-btn{display:none;width:34px;height:34px;border-radius:var(--r-sm);color:var(--ink2);place-items:center}
+.menu-btn:hover{background:var(--hover)}
+.content{flex:1;overflow:auto;min-height:0}
+.page{width:min(780px,100%);margin:0 auto;padding:44px 36px 96px}
+
+/* brand + sidebar */
+.brand{display:flex;align-items:center;gap:10px;padding:4px 6px;cursor:pointer}
+.brand .mark{width:26px;height:26px;border-radius:7px;background:var(--ink);color:var(--accent-ink);display:grid;place-items:center}
+.brand .mark .ic{width:14px;height:14px;stroke-width:1.8}
+.brand b{display:block;font-weight:600;font-size:14px;letter-spacing:-.2px}
+.brand small{display:block;font-size:11.5px;color:var(--muted);margin-top:1px}
+.hero{display:block;width:100%;text-align:left;padding:12px 14px;border:1px solid var(--line2);border-radius:var(--r);background:var(--panel);box-shadow:var(--shadow)}
+.hero:hover{border-color:var(--muted)}
+.hero .kicker{font-size:10.5px;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.hero h2{font-size:15px;font-weight:600;margin:4px 0 2px;display:flex;align-items:center;gap:7px;letter-spacing:-.2px}
+.hero h2 .ic{width:15px;height:15px}
+.hero p{margin:0;font-size:12.5px;color:var(--muted);line-height:1.45}
+.hero .go{display:inline-block;margin-top:8px;font-size:12px;font-weight:500;color:var(--ink2)}
+.hero.active{border-color:var(--ink)}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.quick button{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:var(--r-sm);border:1px solid var(--line2);background:var(--panel);font-size:12.5px;font-weight:500;color:var(--ink2)}
+.quick button:hover{color:var(--ink);border-color:var(--muted)}
+.quick button.active{border-color:var(--ink);color:var(--ink)}
+.search{position:relative}
+.search input{width:100%;padding:8px 10px 8px 32px;border:1px solid var(--line2);border-radius:var(--r-sm);background:var(--panel);font-size:13px;color:var(--ink)}
+.search input::placeholder{color:var(--muted)}
+.search input:focus{outline:none;border-color:var(--ink)}
+.search::before{content:"";position:absolute;left:12px;top:50%;width:10px;height:10px;margin-top:-7px;border:1.5px solid var(--muted);border-radius:50%}
+.search::after{content:"";position:absolute;left:21px;top:calc(50% + 2px);width:5px;height:1.5px;background:var(--muted);transform:rotate(45deg)}
+.nav-item{display:flex;justify-content:space-between;align-items:center;width:100%;padding:7px 10px;border-radius:var(--r-sm);color:var(--ink2);font-size:13.5px;text-align:left}
+.nav-item:hover{background:var(--hover)}
+.nav-item.active{background:var(--hover2);color:var(--ink);font-weight:600}
+.nav-item small{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.section-head{display:flex;align-items:center;justify-content:space-between;padding:0 4px 0 10px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.section-head .tools{display:flex;gap:2px;align-items:center}
+.mini{font-size:11.5px;color:var(--muted);padding:3px 6px;border-radius:6px;text-transform:none;letter-spacing:0;font-weight:500}
+.mini:hover{background:var(--hover);color:var(--ink2)}
+.plus{width:24px;height:24px;border-radius:6px;color:var(--ink2);font-size:16px;line-height:1;display:grid;place-items:center}
+.plus:hover{background:var(--hover);color:var(--ink)}
+.spaces{flex:1 1 0!important;min-height:0;overflow-y:auto;margin:0 -4px;padding:2px 4px 6px;display:flex;flex-direction:column;gap:1px}
+.group{border-radius:var(--r-sm)}
+.group-head{display:flex;align-items:center;gap:0;border-radius:var(--r-sm)}
+.group-head:hover{background:var(--hover)}
+.chev{width:22px;height:26px;display:grid;place-items:center;color:var(--muted);flex:none}
+.chev svg{transition:transform .2s;width:12px;height:12px}
+.group.collapsed .chev svg{transform:rotate(-90deg)}
+.group-name{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 6px 6px 2px;text-align:left;font-weight:500;font-size:13.5px;color:var(--ink2)}
+.group-name .name{display:flex;align-items:center;gap:8px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.group-name .count{font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+.group-name.active{color:var(--ink);font-weight:600}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--muted);flex:none}
+.dot.muted{opacity:.4}
+.x{opacity:0;color:var(--muted);width:22px;height:22px;border-radius:6px;font-size:15px;line-height:1;flex:none;transition:opacity .15s}
+.group-head:hover .x,.x:focus-visible{opacity:1}
+.x:hover{color:var(--danger);background:var(--hover2)}
+.group-body{margin:0 0 4px 20px;padding-left:9px;border-left:1px solid var(--line2);display:grid;gap:1px}
+.group-body.hide{display:none!important}
+.tnote-row{position:relative;display:flex;align-items:center}
+.tnote{display:block;width:100%;text-align:left;padding:5px 26px 5px 8px;border-radius:6px;color:var(--ink2);font-size:13px}
+.tnote strong{display:block;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tnote:hover{background:var(--hover);color:var(--ink)}
+.tnote.active{background:var(--hover2);color:var(--ink);font-weight:500}
+.tnote-del{position:absolute;right:2px;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:var(--muted);opacity:0;transition:opacity .15s}
+.tnote-row:hover .tnote-del,.tnote-del:focus-visible{opacity:1}
+.tnote-del:hover{color:var(--danger);background:var(--hover2)}
+@media(hover:none){.tnote-del,.card-del,.x{opacity:1}}
+.empty-note{font-size:12px;color:var(--muted);padding:3px 8px;margin:0}
+.sidebar-foot{display:grid;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.privacy{display:flex;gap:9px;align-items:flex-start;font-size:12px;color:var(--muted);line-height:1.5;padding:0 4px}
+.privacy .lock{width:22px;height:22px;border-radius:6px;background:var(--hover);display:grid;place-items:center;flex:none;color:var(--ink2)}
+.privacy .lock .ic{width:13px;height:13px}
+.privacy b{color:var(--ink2);font-weight:500}
+.foot-btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px}
+.foot-btns button{font-size:12px;color:var(--ink2);padding:7px 2px;border-radius:6px;text-align:center}
+.foot-btns button:hover{background:var(--hover);color:var(--ink)}
+
+/* top bar pieces */
+.pill{border:1px solid var(--line2);padding:4px 10px;border-radius:999px;color:var(--ink2);font-size:12px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;background:var(--panel)}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.pill.ok::before{background:#2f9e6a}
+.save{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.icon-btn{width:32px;height:32px;border-radius:var(--r-sm);color:var(--muted);display:grid;place-items:center}
+.icon-btn:hover{background:var(--hover);color:var(--danger)}
+
+/* page heads */
+.view-head{margin-bottom:28px}
+.view-head h1{font-size:28px;font-weight:600;letter-spacing:-.6px;margin:0 0 6px;line-height:1.2}
+.lede{color:var(--muted);margin:0;max-width:600px;font-size:14px}
+.eyebrow{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px}
+
+/* home */
+.welcome-hero{padding:32px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.welcome-hero::before,.welcome-hero::after{display:none}
+.welcome-hero .eyebrow{margin-bottom:10px}
+.welcome-hero h1{font-size:30px;font-weight:600;letter-spacing:-.8px;line-height:1.18;margin:0 0 10px;max-width:560px}
+.welcome-hero p{margin:0 0 22px;color:var(--ink2);font-size:14.5px;max-width:520px}
+.welcome-hero .btn-light{background:var(--accent);color:var(--accent-ink);font-weight:500;padding:9px 16px;border-radius:var(--r-sm);display:inline-flex;align-items:center;gap:7px;font-size:13.5px}
+.welcome-hero .ghost{color:var(--ink2);border:1px solid var(--line2);padding:8px 14px;border-radius:var(--r-sm);margin-left:6px;display:inline-flex;align-items:center;gap:7px;font-size:13.5px}
+.welcome-hero .ghost:hover,.welcome-hero .btn-light:hover{filter:none;opacity:.9}
+.home-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:12px;margin:12px 0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 18px 14px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+.panel-head h2{margin:0;font-size:14.5px;font-weight:600;letter-spacing:-.2px}
+.cal-nav{display:flex;gap:4px}
+.cal-nav .icon-btn,.icon-btn-sm{width:28px;height:28px;border-radius:6px;color:var(--ink2);font-size:16px;display:grid;place-items:center}
+.cal-nav .icon-btn:hover{background:var(--hover);color:var(--ink)}
+.link-btn{background:none;border:0;color:var(--ink2);font-weight:500;font-size:12px;padding:3px 6px;border-radius:6px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--line2)}
+.link-btn:hover{color:var(--ink)}
+.cal-dow,.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px}
+.cal-dow span{text-align:center;font-size:10.5px;color:var(--muted);font-weight:500;padding-bottom:6px;text-transform:uppercase;letter-spacing:.3px}
+.cal-cell{position:relative;aspect-ratio:1/1;border-radius:8px;font-size:12.5px;color:var(--ink2);display:flex;align-items:center;justify-content:center;padding:0;font-variant-numeric:tabular-nums}
+.cal-cell:hover{background:var(--hover)}
+.cal-cell.blank{visibility:hidden;cursor:default}
+.cal-cell.today{box-shadow:inset 0 0 0 1px var(--ink);color:var(--ink);font-weight:600}
+.cal-cell.pick{background:var(--accent);color:var(--accent-ink)}
+.cal-cell i{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--ink2)}
+.cal-cell.pick i{background:var(--accent-ink)}
+.up-list{display:grid;gap:1px}
+.up-row{display:grid;grid-template-columns:96px minmax(0,1fr) auto;gap:12px;align-items:center;text-align:left;padding:8px 8px;border-radius:8px;color:var(--ink)}
+.up-row:hover{background:var(--hover)}
+.up-date{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.up-row.late .up-date{color:var(--danger);font-weight:500}
+.up-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+.up-space{font-size:12px;color:var(--muted)}
+.up-more,.up-empty{font-size:12.5px;color:var(--muted);margin:6px 8px 0}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.card-wrap{position:relative;display:flex}
+.card-wrap>.card{flex:1;min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px;text-align:left;display:flex;flex-direction:column;gap:8px;min-height:138px;transition:border-color .15s}
+.card:hover{border-color:var(--line2)}
+.card-meta{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11.5px;color:var(--muted)}
+.card h3{margin:2px 0 0;font-size:15px;font-weight:600;letter-spacing:-.2px;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.card p{margin:0;color:var(--muted);font-size:13px;line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.card-del{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:6px;display:grid;place-items:center;color:var(--muted);opacity:0;transition:opacity .15s}
+.card-wrap:hover .card-del,.card-del:focus-visible{opacity:1}
+.card-del:hover{color:var(--danger);background:var(--hover)}
+.tag{background:var(--hover);color:var(--ink2);border-radius:6px;padding:1px 7px;font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.tag.muted{color:var(--muted);background:transparent;border:1px solid var(--line)}
+.tag.rem{color:var(--ink);background:transparent;border:1px solid var(--line2)}
+.empty-state{grid-column:1/-1;text-align:left;padding:40px 0;color:var(--muted)}
+.empty-state h3{color:var(--ink);margin:0 0 6px;font-size:16px;font-weight:600}
+.empty-state p{margin:0;max-width:420px}
+
+/* buttons */
+.btn-primary{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:var(--accent-ink);font-weight:500;font-size:13.5px;padding:8px 14px;border-radius:var(--r-sm)}
+.btn-primary:hover:not(:disabled){opacity:.88}
+.btn-ghost{display:inline-flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line2);padding:7px 13px;border-radius:var(--r-sm);color:var(--ink2);font-weight:500;font-size:13.5px}
+.btn-ghost:hover:not(:disabled){color:var(--ink);border-color:var(--muted)}
+.btn-quiet{padding:7px 12px;border-radius:var(--r-sm);color:var(--ink2);font-weight:500;font-size:13.5px}
+.btn-quiet:hover{background:var(--hover);color:var(--ink)}
+
+/* editor */
+.meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;color:var(--muted);font-size:12.5px;margin-bottom:10px}
+.meta select{border:1px solid var(--line2);background:var(--panel);color:var(--ink2);font-size:12.5px;border-radius:6px;padding:3px 8px;cursor:pointer}
+.title{width:100%;border:0;outline:0;background:transparent;font:600 34px/1.2 var(--sans);letter-spacing:-.9px;color:var(--ink);padding:0;margin:0 0 18px}
+.title::placeholder{color:var(--muted);opacity:.6}
+.toolbar{position:sticky;top:0;z-index:4;display:flex;flex-wrap:wrap;align-items:center;gap:1px;padding:4px;margin-bottom:20px;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm)}
+.toolbar button,.toolbar select{height:30px;min-width:30px;padding:0 8px;border-radius:6px;color:var(--ink2);font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.toolbar button:hover,.toolbar select:hover{background:var(--hover);color:var(--ink)}
+.toolbar button.on{background:var(--hover2);color:var(--ink)}
+.toolbar select{border:1px solid var(--line);padding:0 6px}
+.toolbar .sep{width:1px;height:18px;background:var(--line2);margin:0 4px}
+.swatches{display:flex;gap:4px;align-items:center;padding:0 2px}
+.sw{width:14px;height:14px;border-radius:50%;border:1px solid var(--line2);padding:0;min-width:14px}
+.sw:hover{transform:scale(1.15)}
+.sw.hl{border-radius:4px}
+.sw.none{background:linear-gradient(to top right,transparent 45%,#c0392b 46%,#c0392b 54%,transparent 55%),var(--panel)}
+.ai-menu{position:absolute;top:calc(100% + 6px);right:6px;z-index:5;background:var(--panel);border:1px solid var(--line2);border-radius:var(--r);box-shadow:var(--shadow-lg);padding:4px;display:grid;min-width:240px}
+.ai-menu button{text-align:left;padding:8px 10px;border-radius:6px;height:auto;font-size:13px}
+.ai-menu button:hover{background:var(--hover)}
+.editor{min-height:55vh;outline:0;font:16px/1.75 var(--sans);color:var(--ink2);overflow-wrap:anywhere;padding-bottom:40px}
+.editor:empty:before{content:attr(data-placeholder);color:var(--muted);pointer-events:none}
+.editor h1{font:600 26px/1.3 var(--sans);letter-spacing:-.4px;margin:1em 0 .3em;color:var(--ink)}
+.editor h2{font:600 20px/1.35 var(--sans);letter-spacing:-.2px;margin:1em 0 .3em;color:var(--ink)}
+.editor h3{font:600 16px/1.4 var(--sans);margin:.9em 0 .2em;color:var(--ink)}
+.editor blockquote{margin:.8em 0;padding:0 0 0 16px;border-left:2px solid var(--line2);color:var(--ink2)}
+.editor ul,.editor ol{padding-left:1.4em;margin:.4em 0}
+.editor a{color:var(--ink);text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
+.editor mark{border-radius:3px;padding:0 2px}
+.todo{display:flex;gap:10px;align-items:flex-start;margin:.25em 0}
+.todo input{margin-top:.5em;width:15px;height:15px;accent-color:var(--ink);flex:none}
+.todo span{flex:1;min-width:0}
+.todo.done span{color:var(--muted);text-decoration:line-through}
+.ai-panel{margin-top:28px;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:16px 18px}
+.ai-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-weight:600;color:var(--ink);font-size:13.5px}
+.ai-out{white-space:pre-wrap;font-size:14px;color:var(--ink2);max-height:300px;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;line-height:1.6}
+.ai-out.bad{color:var(--danger)}
+.ai-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+/* canvas: a plain sheet with faint rules */
+.canvas-wrap{position:relative}
+.sheet{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.sheet:focus-within{border-color:var(--line2)}
+.canvas{display:block;width:100%;min-height:54vh;border:0;border-radius:14px;background:transparent;padding:24px 28px;font:16px/28px var(--sans);color:var(--ink);resize:vertical;outline:0;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 27px,var(--line) 27px,var(--line) 28px);background-attachment:local}
+.canvas::placeholder{color:var(--muted)}
+.canvas-bar{display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap}
+.canvas-bar .status{font-size:13px;color:var(--muted);flex:1;min-width:200px}
+.how{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}
+.how div{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding:12px 0 0;line-height:1.5}
+.how b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px;font-weight:600}
+.undo-bar{margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--r-sm);background:var(--hover);font-size:13px;color:var(--ink2);border:1px solid var(--line)}
+
+/* chat */
+.chat-log{display:grid;gap:16px;margin-bottom:16px;min-height:30vh}
+.msg-user{justify-self:end;background:var(--accent);color:var(--accent-ink);padding:9px 14px;border-radius:14px 14px 4px 14px;max-width:76%;font-size:14px}
+.msg-bot{background:var(--panel);border:1px solid var(--line);padding:14px 16px;border-radius:14px 14px 14px 4px;white-space:pre-wrap;font-size:14px;line-height:1.65;max-width:92%;color:var(--ink2)}
+.msg-bot.err{color:var(--danger)}
+.src{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.src button{font-size:12px;padding:3px 10px;border-radius:999px;background:var(--hover);color:var(--ink2);border:1px solid var(--line)}
+.src button:hover{color:var(--ink);border-color:var(--line2)}
+.meta-line{font-size:11.5px;color:var(--muted);margin-top:10px}
+.chat-form{display:flex;gap:8px;position:sticky;bottom:0;background:var(--bg);padding:12px 0 6px}
+.chat-form input{flex:1;padding:11px 14px;border:1px solid var(--line2);border-radius:var(--r);background:var(--panel);font-size:14px;color:var(--ink)}
+.chat-form input:focus{outline:none;border-color:var(--ink)}
+.chat-form button{padding:0 18px;border-radius:var(--r)}
+
+/* dialogs */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.28);display:none;place-items:center;padding:20px;z-index:50}
+.modal.show{display:grid}
+.dialog{background:var(--panel);padding:24px;border-radius:14px;border:1px solid var(--line);width:min(480px,100%);box-shadow:var(--shadow-lg);max-height:90vh;overflow:auto}
+.dialog h2{font-size:18px;font-weight:600;margin:0 0 4px;letter-spacing:-.3px}
+.dialog>p{color:var(--muted);font-size:13.5px;margin:0 0 4px;line-height:1.5}
+.field{display:grid;gap:6px;margin:14px 0;font-size:12.5px;font-weight:500;color:var(--ink2)}
+.field input{padding:9px 11px;border:1px solid var(--line2);border-radius:var(--r-sm);background:var(--panel);font-weight:400;font-size:14px;color:var(--ink)}
+.field input:focus{outline:none;border-color:var(--ink)}
+.row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.msg{font-size:12.5px;margin:10px 0 0;white-space:pre-wrap;line-height:1.5;color:var(--muted)}
+.msg.bad{color:var(--danger)}
+.msg.good{color:var(--ink2)}
+.privacy-box{background:var(--hover);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px 14px;font-size:13px;color:var(--ink2);margin:14px 0;line-height:1.55}
+.privacy-box b{color:var(--ink)}
+.opt{display:flex;gap:12px;align-items:flex-start;padding:11px 0;font-size:13.5px;border-bottom:1px solid var(--line);cursor:pointer}
+.opt input{margin-top:3px;accent-color:var(--ink)}
+.opt small{display:block;color:var(--muted);font-size:12.5px;line-height:1.45;margin-top:1px}
+code{background:var(--hover);padding:1px 6px;border-radius:5px;font-size:12px;word-break:break-all;color:var(--ink2)}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.2);z-index:15}
+.rem-ctl{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;color:var(--ink2)}
+.rem-ctl input{font:inherit;padding:3px 7px;border:1px solid var(--line2);border-radius:6px;background:var(--panel);color:var(--ink)}
+
+/* responsive */
+@media(max-width:1000px){.app{grid-template-columns:224px minmax(0,1fr)}.page{padding:36px 26px 90px}.how{grid-template-columns:1fr}}
+@media(max-width:760px){.home-grid{grid-template-columns:1fr}}
+@media(max-width:700px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;top:0;bottom:0;left:0;width:min(290px,86vw);z-index:20;transform:translateX(-104%);transition:transform .25s ease;border-right:1px solid var(--line2);box-shadow:none}
+  .sidebar.open{transform:none;box-shadow:var(--shadow-lg)}
+  .menu-btn{display:grid}
+  .topbar{height:54px;padding:0 12px}
+  .page{padding:24px 18px 80px}
+  .view-head h1{font-size:24px}
+  .title{font-size:30px}
+  .welcome-hero{padding:24px}
+  .welcome-hero h1{font-size:24px}
+  .pill{display:none}
+  .editor{font-size:16px}
+  .canvas{font-size:16px;padding:18px}
+  .dialog{padding:20px}
+}
+.privacy-card{display:flex;gap:14px;align-items:flex-start;padding:18px 0 0;border-top:1px solid var(--line);margin-top:20px}
+.privacy-card .lock{width:30px;height:30px;border-radius:8px;background:var(--hover);display:grid;place-items:center;flex:none;color:var(--ink2)}
+.privacy-card h3{margin:2px 0 6px;font-size:14px;font-weight:600}
+.privacy-card ul{margin:0;padding-left:18px;color:var(--muted);font-size:13px;line-height:1.7}
+.privacy-card li{margin:0}
+
+/* delete controls: always visible, clearly a button */
+.card-del{opacity:1;width:30px;height:30px;color:var(--ink2);background:var(--panel);border:1px solid var(--line2)}
+.card-del:hover{color:var(--danger);border-color:var(--danger);background:var(--panel)}
+.card-wrap>.card .card-meta{padding-right:34px}
+.tnote-del{opacity:.8;color:var(--ink2)}
+.tnote-row:hover .tnote-del{opacity:1}
+.tnote-del:hover{color:var(--danger);background:var(--hover2);opacity:1}
+#deleteNote{gap:6px;font-size:13px;color:var(--ink2)}
+#deleteNote:hover{color:var(--danger);border-color:var(--danger)}
+.head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn-ghost.danger{color:var(--danger)}
+.btn-ghost.danger:hover:not(:disabled){border-color:var(--danger)}
+.setup-note{margin:14px 0 0;padding:12px 14px;border-radius:var(--r-sm);background:var(--hover);border:1px solid var(--line);font-size:13px;color:var(--ink2);line-height:1.55}
+.setup-note b{color:var(--ink);font-weight:600}
+</style></head>
+<body>
+<svg class="sprite" aria-hidden="true">
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3.5l1.6 4.6 4.6 1.6-4.6 1.6L12 16l-1.6-4.7-4.6-1.6 4.6-1.6z"/><path d="M18.5 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z"/></symbol>
+<symbol id="i-pen" viewBox="0 0 24 24"><path d="M4 20l1-4.5L15.5 5a2.1 2.1 0 0 1 3 3L8 18.5z"/><path d="M13.5 7l3 3"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.8h5V7M6.5 7l1 12.2h9l1-12.2"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="17.5" r="1"/></symbol>
+<symbol id="i-ol" viewBox="0 0 24 24"><path d="M9.5 6.5h11M9.5 12h11M9.5 17.5h11"/><path d="M3.5 5v3.5M3.5 8.5h1.5"/><path d="M3.2 13.6c.2-.9 1.2-1.1 1.7-.5.5.6-.2 1.2-1.6 2.4h2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4.5"/><path d="M8 12.2l2.6 2.5L16 9.5"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1.2-1.2"/></symbol>
+<symbol id="i-indent" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M3 17.5h17"/><path d="M3.5 9.5l2.5 2.5-2.5 2.5"/></symbol>
+<symbol id="i-outdent" viewBox="0 0 24 24"><path d="M9 6.5h11M9 12h11M3 17.5h17"/><path d="M6 9.5L3.5 12 6 14.5"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14L4.5 9.5 9 5"/><path d="M4.5 9.5H14a5.5 5.5 0 0 1 0 11h-3"/></symbol>
+<symbol id="i-redo" viewBox="0 0 24 24"><path d="M15 14l4.5-4.5L15 5"/><path d="M19.5 9.5H10a5.5 5.5 0 0 0 0 11h3"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+</svg>
+<div class="app">
+
+<aside class="sidebar" id="sidebar" aria-label="Navigation">
+  <div class="brand" id="brand" title="Home">
+    <span class="mark"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg></span>
+    <div><b>Localnotes</b><small>private notes, organised by AI</small></div>
+  </div>
+
+  <button class="hero" id="canvasBtn" type="button">
+    <div class="kicker">Start here</div>
+    <h2><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg> Canvas</h2>
+    <p>Dump anything, in any order. AI sorts it into checklists, one per topic.</p>
+    <span class="go">Open canvas →</span>
+  </button>
+
+  <div class="quick">
+    <button id="chatBtn" type="button" title="Ask questions about your notes"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg> Ask notes</button>
+    <button id="newNote" type="button" title="Write a note by hand"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> New note</button>
+  </div>
+
+  <div class="search"><input id="search" type="search" placeholder="Search all notes" aria-label="Search all notes"></div>
+
+  <button class="nav-item" id="allBtn" type="button">All notes <small id="allCount"></small></button>
+
+  <div class="section-head">
+    <span>Spaces</span>
+    <span class="tools">
+      <button class="mini" id="collapseAll" type="button" title="Collapse or expand every space">Collapse all</button>
+      <button class="plus" id="addSpace" type="button" title="New space" aria-label="New space">+</button>
+    </span>
+  </div>
+  <div class="spaces" id="spaces"></div>
+
+  <div class="sidebar-foot">
+    <div class="privacy"><span class="lock"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></span><span><b>100% private.</b> Notes never leave this device.</span></div>
+    <div class="foot-btns">
+      <button id="exportBtn" type="button" title="Save a backup file">Export</button>
+      <button id="importBtn" type="button" title="Load a backup file">Import</button>
+      <button id="settingsBtn" type="button" title="Local AI (Ollama) and privacy">AI setup</button>
+    </div>
+    <input id="importFile" type="file" accept="application/json,.json" class="hide">
+  </div>
+</aside>
+<div class="scrim hide" id="scrim"></div>
+
+<main class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="menu-btn" id="menuBtn" type="button" aria-label="Open menu"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
+      <div class="crumb" id="crumb">Home</div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="themeBtn" type="button" aria-label="Switch light and dark mode" title="Switch light / dark mode"><svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg></button>
+      <button class="pill" id="ollamaStatus" type="button" title="Set up local AI">AI not connected</button>
+      <span class="save" id="saveStatus">Saved</span>
+      <button class="btn-ghost" id="deleteNote" type="button" title="Delete this note" aria-label="Delete this note"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg>Delete</button>
+    </div>
+  </header>
+
+  <section class="content" id="workspace">
+    <div class="page">
+
+      <!-- Home -->
+      <div id="welcome" class="hide">
+        <div class="welcome-hero">
+          <div class="eyebrow">Welcome to Localnotes</div>
+          <h1>Think out loud. We'll tidy up.</h1>
+          <p>Write anything on the Canvas: tasks, half-ideas, meeting scraps. Your local AI groups it by topic into clear checklists, filed in your spaces.</p>
+          <button class="btn-light" id="welcomeCanvas" type="button"><svg class="ic" aria-hidden="true"><use href="#i-pen"/></svg> Open the Canvas</button>
+          <button class="ghost" id="welcomeChat" type="button"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg> Ask your notes</button>
+        </div>
+        <div class="home-grid">
+          <div class="panel">
+            <div class="panel-head"><h2 id="calTitle"></h2>
+              <div class="cal-nav"><button class="icon-btn" id="calPrev" type="button" aria-label="Previous month">‹</button><button class="icon-btn" id="calNext" type="button" aria-label="Next month">›</button></div></div>
+            <div class="cal-dow"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h2 id="upHeading">Coming up</h2><button class="link-btn hide" id="upClear" type="button">Show all</button></div>
+            <div class="up-list" id="upList"></div>
+          </div>
+        </div>
+        <div class="privacy-card">
+          <div class="lock"><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg></div>
+          <div>
+            <h3>Private by design</h3>
+            <ul>
+              <li>Notes are saved only in this browser on this computer.</li>
+              <li>The AI runs on your computer through Ollama. Nothing is sent to a server.</li>
+              <li>The app makes no network requests except to the local AI address you set.</li>
+              <li>Clearing this browser's site data deletes your notes, so export a backup from time to time.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category / all-notes page -->
+      <div id="overviewView" class="hide">
+        <div class="view-head" style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap">
+          <div>
+            <div class="eyebrow" id="overviewEyebrow">Space</div>
+            <h1 id="overviewTitle">All notes</h1>
+            <p class="lede" id="overviewSub"></p>
+          </div>
+          <div class="head-actions"><button class="btn-ghost danger" id="resetAll" type="button" title="Delete every note in this browser">Reset all notes</button><button class="btn-primary" id="overviewNew" type="button"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg> New note</button></div>
+        </div>
+        <div class="grid" id="overviewGrid"></div>
+      </div>
+
+      <!-- Editor -->
+      <div id="editorView" class="hide">
+        <div class="meta"><span id="dateLabel"></span><span>·</span><label>Space <select id="category"></select></label><span>·</span><span class="rem-ctl"><label>Remind me <input type="date" id="reminderInput"></label><button class="link-btn" id="reminderClear" type="button">Clear</button></span></div>
+        <input id="noteTitle" class="title" placeholder="Untitled note" aria-label="Note title">
+        <div class="toolbar" id="toolbar">
+          <select id="blockFmt" title="Text style" aria-label="Text style">
+            <option value="p">Normal text</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="blockquote">Quote</option>
+          </select>
+          <span class="sep"></span>
+          <button data-cmd="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+          <button data-cmd="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+          <button data-cmd="underline" title="Underline (Ctrl+U)"><u>U</u></button>
+          <button data-cmd="strikeThrough" title="Strikethrough"><s>S</s></button>
+          <span class="sep"></span>
+          <div class="swatches" id="textColors" title="Text colour"></div>
+          <div class="swatches" id="hiColors" title="Highlight"></div>
+          <span class="sep"></span>
+          <button data-cmd="insertUnorderedList" title="Bulleted list"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg></button>
+          <button data-cmd="insertOrderedList" title="Numbered list"><svg class="ic" aria-hidden="true"><use href="#i-ol"/></svg></button>
+          <button id="todoBtn" title="Checkbox to-do"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg></button>
+          <button id="linkBtn" title="Add link"><svg class="ic" aria-hidden="true"><use href="#i-link"/></svg></button>
+          <span class="sep"></span>
+          <button data-cmd="outdent" title="Outdent"><svg class="ic" aria-hidden="true"><use href="#i-outdent"/></svg></button>
+          <button data-cmd="indent" title="Indent"><svg class="ic" aria-hidden="true"><use href="#i-indent"/></svg></button>
+          <button data-cmd="removeFormat" title="Clear formatting">Clear</button>
+          <span class="sep"></span>
+          <button data-cmd="undo" title="Undo (Ctrl+Z)"><svg class="ic" aria-hidden="true"><use href="#i-undo"/></svg></button>
+          <button data-cmd="redo" title="Redo (Ctrl+Y)"><svg class="ic" aria-hidden="true"><use href="#i-redo"/></svg></button>
+          <span class="sep"></span>
+          <button id="aiBtn" title="Ask your local AI"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg> AI</button>
+          <div class="ai-menu hide" id="aiMenu">
+            <button data-ai="summarize">Summarise this note</button>
+            <button data-ai="grammar">Fix spelling and grammar</button>
+            <button data-ai="todo">Pull out action items as a checklist</button>
+            <button data-ai="title">Suggest a title</button>
+          </div>
+        </div>
+        <div id="editor" class="editor" contenteditable="true" spellcheck="true" data-placeholder="Begin wherever you are…" aria-label="Note body"></div>
+        <div class="ai-panel hide" id="aiPanel">
+          <div class="ai-head"><span id="aiTitle">AI</span><span class="subtle" id="aiState"></span></div>
+          <div class="ai-out" id="aiOut"></div>
+          <div class="ai-actions" id="aiActions"></div>
+        </div>
+      </div>
+
+      <!-- Canvas -->
+      <div id="canvasView" class="hide">
+        <div class="view-head">
+          <div class="eyebrow">Your main workspace</div>
+          <h1>Canvas</h1>
+          <p class="lede">Dump everything here, messy is fine. Organise turns it into one checklist per topic and files each one in its space. Your text stays here until it has been organised.</p>
+        </div>
+        <div class="canvas-wrap">
+          <div class="sheet">
+            <textarea id="canvasText" class="canvas" placeholder="Start typing… a to-do, a half-thought, a link, a line from a meeting. Anything goes." aria-label="Canvas"></textarea>
+          </div>
+          <div class="canvas-bar">
+            <button class="btn-primary" id="organiseBtn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg> Organise with AI</button>
+            <button class="btn-ghost" id="canvasClear" type="button">Clear canvas</button>
+            <span class="status" id="canvasStatus"></span>
+          </div>
+          <div class="undo-bar hide" id="undoBar"><span id="undoText"></span><button class="btn-ghost" id="undoBtn" type="button">Undo</button></div>
+        </div>
+        <div class="how">
+          <div><b>1. Dump</b>Type or paste anything, in any order.</div>
+          <div><b>2. Organise</b>Ctrl+Enter or the button. Works in the background.</div>
+          <div><b>3. Check off</b>Each topic is one checklist in its space.</div>
+        </div>
+      </div>
+
+      <!-- Ask your notes -->
+      <div id="chatView" class="hide">
+        <div class="view-head">
+          <div class="eyebrow">Search by question</div>
+          <h1>Ask your notes</h1>
+          <p class="lede">Answers come only from your notes. Words such as "last month", "this week" or "in March" narrow the search by date. Every answer lists the notes it used.</p>
+        </div>
+        <div class="chat-log" id="chatLog"></div>
+        <form class="chat-form" id="chatForm" autocomplete="off">
+          <input id="chatInput" placeholder="e.g. What did I do last month on fundraising?" aria-label="Question about your notes">
+          <button class="btn-primary" id="chatSend" type="submit">Ask</button>
+        </form>
+      </div>
+
+    </div>
+  </section>
+</main>
+</div>
+
+<div class="modal" id="modal">
+  <div class="dialog">
+    <h2 id="modalTitle"></h2>
+    <p id="modalDesc"></p>
+    <div id="modalFields"></div>
+    <div class="row">
+      <button class="btn-quiet" id="cancelModal" type="button">Cancel</button>
+      <button class="btn-primary" id="confirmModal" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(()=>{'use strict';
+const DB='stillnote-html-v1', STORE='notes', SPACES='spaces';
+const DEFAULT_SPACES=['Routines','Journal','Work','Ideas'];
+const OLLAMA_DEFAULT='http://localhost:11434';
+const TEXT_COLORS=['#23271f','#4d6b56','#2f5d8a','#7a4e8c','#b3413a','#b18a51','#8a8f85'];
+const HIGHLIGHTS=['#fff1a8','#d8ecd0','#d5e6f7','#f8d7e3','#fbe0c2'];
+const CHEV='<svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const AI_ACTIONS={
+  summarize:{title:'Summary', prompt:t=>`Summarise the note below in 3 to 6 short bullet points. Reply with only the bullet points.\n\nNOTE:\n${t}`},
+  grammar:{title:'Corrected text', prompt:t=>`Fix the spelling and grammar of the text below. Keep its meaning, language, tone and line breaks. Reply with only the corrected text.\n\nTEXT:\n${t}`},
+  todo:{title:'Action items', prompt:t=>`List the action items in the note below as a checklist. Output one item per line, each starting with "- [ ] ". Output nothing else.\n\nNOTE:\n${t}`},
+  title:{title:'Suggested title', prompt:t=>`Suggest one short title (at most 6 words) for the note below. Reply with only the title.\n\nNOTE:\n${t}`}
+};
+const $=id=>document.getElementById(id);
+const editor=$('editor');
+let db, notes=[], spaces=[], active=null, filter='', query='', timer=null, dirty=false, savedRange=null, aiResult=null, lastOrganised=null;
+
+const newId=()=>crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store=(name,mode='readonly')=>db.transaction(name,mode).objectStore(name);
+const req=r=>new Promise((res,rej)=>{r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);});
+const getAll=name=>req(store(name).getAll());
+const put=(name,obj)=>req(store(name,'readwrite').put(obj));
+const remove=(name,key)=>req(store(name,'readwrite').delete(key));
+function openDB(){return new Promise((res,rej)=>{
+  const r=indexedDB.open(DB,1);
+  r.onupgradeneeded=()=>{const d=r.result;d.createObjectStore(STORE,{keyPath:'id'});
+    const s=d.createObjectStore(SPACES,{keyPath:'name'});
+    DEFAULT_SPACES.forEach((name,i)=>s.put({name,order:i+1}));};
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+});}
+
+/* ---------- safe HTML for notes ---------- */
+const BLOCK_OR_BR=/<\/(div|p|li|h[1-3]|blockquote)>|<br\s*\/?>/gi;
+const ALLOWED=new Set(['P','DIV','SPAN','BR','B','STRONG','I','EM','U','S','STRIKE','H1','H2','H3','UL','OL','LI','BLOCKQUOTE','MARK','A','INPUT']);
+const DROP=new Set(['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','SVG','MATH','TEMPLATE','NOSCRIPT','TEXTAREA','SELECT','BUTTON','IMG','VIDEO','AUDIO','FORM','LINK','META']);
+const KEEP_CLASS=new Set(['todo','todo done']);
+function clean(root){
+  for(const el of [...root.childNodes]){
+    if(el.nodeType===3) continue;
+    if(el.nodeType!==1){el.remove();continue;}
+    const tag=el.tagName;
+    if(DROP.has(tag)){el.remove();continue;}
+    if(!ALLOWED.has(tag)){clean(el);el.replaceWith(...el.childNodes);continue;}
+    const href=(el.getAttribute('href')||'').trim();
+    const style=el.getAttribute('style')||'';
+    const cls=el.getAttribute('class')||'';
+    const type=(el.getAttribute('type')||'').toLowerCase();
+    const checked=el.hasAttribute('checked');
+    [...el.attributes].forEach(a=>el.removeAttribute(a.name));
+    if(tag==='INPUT'){
+      if(type!=='checkbox'){el.remove();continue;}
+      el.setAttribute('type','checkbox'); el.setAttribute('contenteditable','false');
+      if(checked) el.setAttribute('checked','');
+      continue;
+    }
+    if(tag==='A'){
+      if(!/^(https?:|mailto:)/i.test(href)){clean(el);el.replaceWith(...el.childNodes);continue;}
+      el.setAttribute('href',href); el.setAttribute('target','_blank'); el.setAttribute('rel','noopener noreferrer');
+    }
+    if(tag==='SPAN'||tag==='MARK'){
+      const pick=p=>{const m=style.match(new RegExp('(?:^|;)\\s*'+p+'\\s*:\\s*([^;]+)'));const v=m&&m[1].trim();
+        return v&&/^(#[0-9a-f]{3,8}|(rgba?|hsla?)\([\d\s.,%]+\))$/i.test(v)?v:'';};
+      const c=pick('color'), bg=pick('background-color');
+      const parts=[]; if(c) parts.push('color:'+c); if(bg) parts.push('background-color:'+bg);
+      if(parts.length) el.setAttribute('style',parts.join(';'));
+      else if(tag==='SPAN'){clean(el);el.replaceWith(...el.childNodes);continue;}
+    }
+    if((tag==='DIV'||tag==='P'||tag==='LI')&&KEEP_CLASS.has(cls)) el.setAttribute('class',cls);
+    clean(el);
+  }
+}
+function sanitize(html){
+  const t=document.createElement('template'); t.innerHTML=String(html??'');
+  clean(t.content);
+  const box=document.createElement('div'); box.appendChild(t.content); return box.innerHTML;
+}
+function plainText(html){
+  const t=document.createElement('template');
+  t.innerHTML=String(html||'').replace(BLOCK_OR_BR,'\n');
+  return t.content.textContent||'';
+}
+const notePlain=n=>n.format==='html'?plainText(n.body):(n.body||'');
+const isBlank=n=>!(n.title||'').trim() && !notePlain(n).trim() && !(n.format==='html'&&/<input/i.test(n.body||''));
+const toEditorHTML=n=>n.format==='html'?sanitize(n.body||''):esc(n.body||'').replace(/\n/g,'<br>');
+function linesToHTML(text){
+  return text.split('\n').map(line=>{
+    const todo=line.match(/^\s*[-*]\s*\[( |x|X)?\]\s*(.*)$/);
+    if(todo) return `<div class="todo"><input type="checkbox" contenteditable="false"><span>${esc(todo[2])||'<br>'}</span></div>`;
+    const bullet=line.match(/^\s*[-*]\s+(.*)$/);
+    if(bullet) return `<div>• ${esc(bullet[1])}</div>`;
+    return line.trim()?`<div>${esc(line)}</div>`:'<div><br></div>';
+  }).join('');
+}
+const fmtDate=t=>{const d=new Date(t);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;};
+const prettyDate=t=>new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'});
+const previewOf=n=>notePlain(n).replace(/\s+/g,' ').trim();
+
+/* ---------- collapsed state ---------- */
+function getCollapsed(){try{return JSON.parse(localStorage.collapsedSpaces||'[]');}catch{return [];}}
+function setCollapsed(list){try{localStorage.collapsedSpaces=JSON.stringify(list);}catch{}}
+function toggleGroup(name){
+  const c=getCollapsed(); const i=c.indexOf(name);
+  if(i>=0) c.splice(i,1); else c.push(name);
+  setCollapsed(c); renderTree();
+}
+
+/* ---------- rendering ---------- */
+async function refresh(){
+  notes=(await getAll(STORE)).sort((a,b)=>b.updated-a.updated);
+  spaces=(await getAll(SPACES)).sort((a,b)=>(a.order||0)-(b.order||0)).map(s=>s.name);
+  renderAll();
+}
+function renderAll(){
+  renderCategoryOptions(); renderTree(); renderCounts(); renderHome();
+  if(!$('overviewView').classList.contains('hide')) renderOverview();
+}
+/* ---------- home: reminders calendar ---------- */
+let calMonth=new Date(new Date().getFullYear(),new Date().getMonth(),1), calPick='';
+const pad2=n=>String(n).padStart(2,'0');
+const dayLabel=key=>new Date(key+'T00:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'});
+function renderHome(){
+  if($('welcome').classList.contains('hide')) return;
+  const y=calMonth.getFullYear(), m=calMonth.getMonth();
+  $('calTitle').textContent=calMonth.toLocaleDateString(undefined,{month:'long',year:'numeric'});
+  const offset=(new Date(y,m,1).getDay()+6)%7, days=new Date(y,m+1,0).getDate();
+  const today=fmtDate(new Date());
+  const marks=new Map();
+  for(const n of notes) if(n.reminder) marks.set(n.reminder,(marks.get(n.reminder)||0)+1);
+  let cells='';
+  for(let i=0;i<offset;i++) cells+='<span class="cal-cell blank"></span>';
+  for(let d=1;d<=days;d++){
+    const key=`${y}-${pad2(m+1)}-${pad2(d)}`, c=marks.get(key)||0;
+    cells+=`<button type="button" class="cal-cell${key===today?' today':''}${key===calPick?' pick':''}" data-day="${key}" aria-label="${key}${c?`, ${c} reminder${c>1?'s':''}`:''}"><span>${d}</span>${c?'<i></i>':''}</button>`;
+  }
+  $('calGrid').innerHTML=cells;
+  const row=n=>{const late=n.reminder<today;const when=n.reminder===today?'Today':n.reminder<today?'Overdue · '+dayLabel(n.reminder):dayLabel(n.reminder);
+    return `<button class="up-row${late?' late':''}" type="button" data-note="${esc(n.id)}"><span class="up-date">${esc(when)}</span><span class="up-title">${esc(n.title||'Untitled note')}</span><span class="up-space">${esc(n.category||'Unsorted')}</span></button>`;};
+  let list, heading=calPick?`Reminders on ${dayLabel(calPick)}`:'Coming up';
+  if(calPick){
+    list=notes.filter(n=>n.reminder===calPick);
+    $('upList').innerHTML=list.length?list.map(row).join(''):'<p class="up-empty">Nothing on this day.</p>';
+    $('upClear').textContent='Show all'; $('upClear').classList.remove('hide');
+  }else{
+    const limit=new Date(); limit.setDate(limit.getDate()+14);
+    const cutoff=fmtDate(limit);
+    list=notes.filter(n=>n.reminder&&n.reminder<=cutoff).sort((a,b)=>a.reminder.localeCompare(b.reminder));
+    const shown=list.slice(0,8);
+    $('upList').innerHTML=shown.length?shown.map(row).join('')+(list.length>shown.length?`<p class="up-more">+${list.length-shown.length} more on the calendar</p>`:''):
+      '<p class="up-empty">Nothing due in the next two weeks. Set a "Remind me" date on any note.</p>';
+    $('upClear').classList.add('hide');
+  }
+  $('upHeading').textContent=heading;
+}
+function renderCategoryOptions(){
+  const cur=$('category').value;
+  $('category').innerHTML='<option value="">Unsorted</option>'+spaces.map(s=>`<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  $('category').value=spaces.includes(cur)?cur:'';
+}
+function renderCounts(){
+  $('allCount').textContent=notes.length;
+  $('allBtn').classList.toggle('active',false);
+}
+function renderTree(){
+  const q=query.trim().toLowerCase();
+  const collapsed=getCollapsed();
+  const groups=[...spaces.map(s=>({name:s,real:true})),{name:'Unsorted',real:false}];
+  const allCollapsed=groups.every(g=>collapsed.includes(g.name));
+  $('collapseAll').textContent=allCollapsed?'Expand all':'Collapse all';
+  $('spaces').innerHTML=groups.map(g=>{
+    const items=notes.filter(n=>g.real?n.category===g.name:!n.category);
+    const isCol=collapsed.includes(g.name);
+    const isOn=filter===g.name && !query;
+    return `<div class="group${isCol?' collapsed':''}">
+      <div class="group-head">
+        <button class="chev" type="button" data-toggle="${esc(g.name)}" aria-label="${isCol?'Expand':'Collapse'} ${esc(g.name)}" title="${isCol?'Expand':'Collapse'}">${CHEV}</button>
+        <button class="group-name${isOn?' active':''}" type="button" data-space="${esc(g.name)}" title="Open ${esc(g.name)}">
+          <span class="name"><i class="dot${g.real?'':' muted'}"></i>${esc(g.name)}</span><span class="count">${items.length}</span>
+        </button>
+        ${g.real?`<button class="x" type="button" data-del="${esc(g.name)}" title="Delete space" aria-label="Delete space ${esc(g.name)}">×</button>`:''}
+      </div>
+      <div class="group-body${isCol?' hide':''}">${items.length?items.map(n=>`<div class="tnote-row"><button class="tnote${n.id===active?' active':''}" type="button" data-note="${esc(n.id)}" title="${esc(n.title||'Untitled note')}"><strong>${esc(n.title||'Untitled note')}</strong></button><button class="tnote-del" type="button" data-del-note="${esc(n.id)}" title="Delete this note" aria-label="Delete this note"><svg class="ic ic-sm" aria-hidden="true"><use href="#i-trash"/></svg></button></div>`).join(''):'<p class="empty-note">Nothing here yet</p>'}</div>
+    </div>`;
+  }).join('');
+  $('allBtn').classList.toggle('active',!filter&&!query&&!$('overviewView').classList.contains('hide'));
+}
+function overviewData(){
+  if(query){
+    const q=query.toLowerCase();
+    return {eyebrow:'Search',title:`“${query}”`,list:notes.filter(n=>(`${n.title} ${notePlain(n)}`).toLowerCase().includes(q)),
+      sub:'Matches across all spaces.',empty:['No matching notes','Try different words, or ask a question in Ask notes.']};
+  }
+  const inSpace=filter&&filter!=='Unsorted';
+  const list=notes.filter(n=>!filter?true:filter==='Unsorted'?!n.category:n.category===filter);
+  if(!filter) return {eyebrow:'Library',title:'All notes',list,sub:'Every note, newest first.',empty:['No notes yet','Start on the Canvas, or write a note by hand.']};
+  if(filter==='Unsorted') return {eyebrow:'Library',title:'Unsorted',list,sub:'Notes that are not in a space yet.',empty:['Nothing unsorted','Every note is filed in a space.']};
+  return {eyebrow:'Space',title:filter,list,sub:inSpace?'Notes in this space.':'',empty:[`${filter} is empty`,'Add a note here, or organise a Canvas dump into this space.']};
+}
+function card(n){
+  const preview=previewOf(n).slice(0,160)||'No text yet';
+  const tag=(n.category?`<span class="tag">${esc(n.category)}</span>`:'<span class="tag muted">Unsorted</span>')+(n.reminder?`<span class="tag rem"><svg class="ic ic-sm" aria-hidden="true"><use href="#i-bell"/></svg>${esc(dayLabel(n.reminder))}</span>`:'');
+  return `<div class="card-wrap"><button class="card" type="button" data-note="${esc(n.id)}"><span class="card-meta">${tag}<span>${prettyDate(n.updated)}</span></span><h3>${esc(n.title||'Untitled note')}</h3><p>${esc(preview)}</p></button><button class="card-del" type="button" data-del-note="${esc(n.id)}" title="Delete this note" aria-label="Delete ${esc(n.title||'this note')}"><svg class="ic ic-sm" aria-hidden="true"><use href="#i-trash"/></svg></button></div>`;
+}
+function renderOverview(){
+  const d=overviewData();
+  const sorted=[...d.list].sort((a,b)=>b.updated-a.updated);
+  $('overviewEyebrow').textContent=d.eyebrow;
+  $('resetAll').classList.toggle('hide',d.eyebrow!=='Library');
+  $('overviewTitle').textContent=d.title;
+  $('overviewSub').textContent=`${sorted.length} note${sorted.length===1?'':'s'}${d.sub?' · '+d.sub:''}`;
+  $('overviewGrid').innerHTML=sorted.length?sorted.map(card).join(''):
+    `<div class="empty-state"><h3>${esc(d.empty[0])}</h3><p>${esc(d.empty[1])}</p></div>`;
+  $('crumb').textContent=d.title.replace(/[“”]/g,'');
+}
+
+/* ---------- views ---------- */
+const CRUMBS={welcome:'Home',canvasView:'Canvas',chatView:'Ask your notes'};
+function showView(name,label){
+  for(const id of ['welcome','overviewView','editorView','canvasView','chatView']) $(id).classList.toggle('hide',id!==name);
+  $('canvasBtn').classList.toggle('active',name==='canvasView');
+  $('chatBtn').classList.toggle('active',name==='chatView');
+  $('allBtn').classList.toggle('active',name==='overviewView'&&!filter&&!query);
+  $('saveStatus').classList.toggle('hide',!(name==='editorView'||name==='canvasView'));
+  $('deleteNote').classList.toggle('hide',name!=='editorView');
+  if(label) $('crumb').textContent=label; else if(CRUMBS[name]) $('crumb').textContent=CRUMBS[name];
+  try{localStorage.lastView=name;}catch{}
+  renderTree();
+}
+function showWelcome(){showView('welcome');renderHome();try{localStorage.lastNote='';}catch{}}
+function setStatus(t){$('saveStatus').textContent=t;}
+function closeSidebar(){$('sidebar').classList.remove('open');$('scrim').classList.add('hide');}
+
+/* ---------- saving & navigation ---------- */
+function scheduleSave(){
+  if(!active) return;
+  dirty=true; setStatus('Saving…');
+  clearTimeout(timer); timer=setTimeout(flush,400);
+}
+async function flush(){
+  clearTimeout(timer); timer=null;
+  if(!active||!dirty) return;
+  const n=notes.find(x=>x.id===active); if(!n) return;
+  dirty=false;
+  Object.assign(n,{title:$('noteTitle').value,body:sanitize(editor.innerHTML),format:'html',category:$('category').value,reminder:$('reminderInput').value||'',updated:Date.now()});
+  await put(STORE,n);
+  setStatus('Saved');
+  renderAll();
+}
+async function leave(){
+  if(!active) return;
+  await flush();
+  const n=notes.find(x=>x.id===active);
+  if(n&&isBlank(n)){await remove(STORE,n.id);notes=notes.filter(x=>x.id!==n.id);}
+  active=null; aiPanelHide();
+}
+async function openNote(key){
+  if(key===active&&!$('editorView').classList.contains('hide')){closeSidebar();return;}
+  await leave();
+  const n=notes.find(x=>x.id===key);
+  if(!n){showOverview();return;}
+  active=key; dirty=false; savedRange=null;
+  $('noteTitle').value=n.title||'';
+  editor.innerHTML=toEditorHTML(n);
+  $('category').value=n.category||'';
+  $('reminderInput').value=n.reminder||'';
+  $('dateLabel').textContent=new Date(n.created).toLocaleDateString(undefined,{month:'long',day:'numeric',year:'numeric'});
+  setStatus('Saved');
+  try{localStorage.lastNote=key;}catch{}
+  showView('editorView', n.category||'Unsorted');
+  renderAll(); closeSidebar();
+}
+function showOverview(){
+  showView('overviewView');
+  renderOverview(); closeSidebar();
+}
+async function setFilter(f){
+  await leave();
+  filter=f; query=''; $('search').value='';
+  showOverview();
+}
+async function createNote(){
+  await leave();
+  const n={id:newId(),title:'',body:'',format:'html',category:(!query&&spaces.includes(filter))?filter:'',created:Date.now(),updated:Date.now()};
+  await put(STORE,n);
+  await refresh();
+  await openNote(n.id);
+  $('noteTitle').focus();
+}
+async function deleteSpace(name){
+  const count=notes.filter(n=>n.category===name).length;
+  if(!confirm(`Delete the space "${name}"?${count?` Its ${count} note${count===1?'':'s'} will move to Unsorted.`:''}`)) return;
+  await leave();
+  for(const n of notes.filter(n=>n.category===name)){n.category='';await put(STORE,n);}
+  await remove(SPACES,name);
+  if(filter===name) filter='';
+  const c=getCollapsed().filter(x=>x!==name); setCollapsed(c);
+  await refresh(); showOverview();
+}
+
+/* ---------- editor formatting ---------- */
+function restoreSelection(){
+  editor.focus();
+  if(savedRange){try{const s=getSelection();s.removeAllRanges();s.addRange(savedRange);}catch{}}
+}
+function placeCaret(node,offset=0){
+  const r=document.createRange(); r.setStart(node,offset); r.collapse(true);
+  const s=getSelection(); s.removeAllRanges(); s.addRange(r); savedRange=r.cloneRange();
+}
+function blockAtCursor(){
+  let n=savedRange&&savedRange.commonAncestorContainer;
+  while(n&&n!==editor){
+    if(n.nodeType===1&&/^(H[1-3]|BLOCKQUOTE|P|DIV|LI)$/.test(n.tagName)) return n.tagName;
+    n=n.parentNode;
+  }
+  return 'P';
+}
+function updateToolbar(){
+  document.querySelectorAll('[data-cmd]').forEach(b=>{
+    const c=b.dataset.cmd;
+    if(['bold','italic','underline','strikeThrough'].includes(c)) b.classList.toggle('on',document.queryCommandState(c));
+  });
+  const tag=blockAtCursor();
+  $('blockFmt').value=['H1','H2','H3','BLOCKQUOTE'].includes(tag)?tag.toLowerCase():'p';
+}
+function exec(cmd,val=null){
+  restoreSelection();
+  document.execCommand('styleWithCSS',false,true);
+  document.execCommand(cmd,false,val);
+  scheduleSave(); updateToolbar();
+}
+function makeTodo(text=''){
+  const wrap=document.createElement('div'); wrap.className='todo';
+  const cb=document.createElement('input'); cb.type='checkbox'; cb.setAttribute('contenteditable','false');
+  const span=document.createElement('span');
+  if(text) span.textContent=text; else span.appendChild(document.createElement('br'));
+  wrap.append(cb,span);
+  return wrap;
+}
+function insertTodo(){
+  restoreSelection();
+  const anchor=getSelection().anchorNode;
+  let top=anchor;
+  while(top&&top!==editor&&top.parentNode!==editor) top=top.parentNode;
+  const todo=makeTodo();
+  if(!top||top===editor) editor.appendChild(todo);
+  else if(top.nodeType===1&&!top.textContent.trim()&&!top.querySelector('input')) top.replaceWith(todo);
+  else top.after(todo);
+  placeCaret(todo.querySelector('span'),0);
+  scheduleSave(); updateToolbar();
+}
+function insertLink(){
+  restoreSelection();
+  const url=(prompt('Link address (starts with https://)','https://')||'').trim();
+  if(!url) return;
+  if(!/^(https?:\/\/|mailto:)/i.test(url)){alert('Only http, https and mailto links are supported.');return;}
+  if(!savedRange||savedRange.collapsed) document.execCommand('insertHTML',false,`<a href="${esc(url)}">${esc(url)}</a>`);
+  else document.execCommand('createLink',false,url);
+  scheduleSave();
+}
+function fillSwatches(){
+  $('textColors').innerHTML=TEXT_COLORS.map(c=>`<button class="sw" style="background:${c}" data-fore="${c}" title="Text colour"></button>`).join('');
+  $('hiColors').innerHTML=HIGHLIGHTS.map(c=>`<button class="sw hl" style="background:${c}" data-hi="${c}" title="Highlight"></button>`).join('')+
+    '<button class="sw hl none" data-hi="transparent" title="Remove highlight" aria-label="Remove highlight"></button>';
+}
+
+/* ---------- local AI (Ollama) ---------- */
+const ollamaBase=()=>(localStorage.ollamaUrl||OLLAMA_DEFAULT).replace(/\/+$/,'');
+const ollamaModel=()=>localStorage.ollamaModel||'llama3.2';
+function ollamaHelp(base=ollamaBase()){
+  const where=location.protocol==='file:'
+    ?'This page is open as a file, which Ollama may refuse. Serve the folder instead: run "python -m http.server 8000" in it and open http://localhost:8000.'
+    :`If Ollama still refuses this page, add ${location.origin} to OLLAMA_ORIGINS and restart Ollama.`;
+  return `Could not reach Ollama at ${base}. Is it running?\n${where}`;
+}
+async function ollamaModels(base){
+  const r=await fetch(base+'/api/tags');
+  if(!r.ok) throw new Error('status '+r.status);
+  const j=await r.json();
+  return (j.models||[]).map(m=>m.name);
+}
+async function ollama(prompt,timeoutMs=180000){
+  let r;
+  try{
+    r=await fetch(ollamaBase()+'/api/generate',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:ollamaModel(),prompt,stream:false}),signal:AbortSignal.timeout(timeoutMs)});
+  }catch(err){
+    if(err&&(err.name==='TimeoutError'||err.name==='AbortError')) throw new Error('The local AI took too long to reply. Try again, or choose a smaller model in AI setup.');
+    throw new Error(ollamaHelp());
+  }
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(data.error?`Ollama: ${data.error}`:`Ollama responded with status ${r.status}.\n${ollamaHelp()}`);
+  return (data.response||'').trim()||'(No text was returned.)';
+}
+async function checkOllama(){
+  const pill=$('ollamaStatus'), model=ollamaModel();
+  try{
+    const names=await ollamaModels(ollamaBase());
+    const ok=names.some(n=>n===model||n===model+':latest');
+    pill.textContent=ok?`AI ready · ${model}`:'AI: model not installed';
+    pill.classList.toggle('ok',ok);
+    return names;
+  }catch{
+    pill.textContent='AI not connected';
+    pill.classList.remove('ok');
+    return null;
+  }
+}
+function aiPanelHide(){$('aiPanel').classList.add('hide');aiResult=null;}
+async function runAI(kind){
+  $('aiMenu').classList.add('hide');
+  const text=plainText(editor.innerHTML).trim();
+  if(!text){alert('Write something in the note first.');return;}
+  const A=AI_ACTIONS[kind];
+  $('aiPanel').classList.remove('hide');
+  $('aiTitle').textContent=A.title;
+  $('aiState').textContent='Thinking… (runs on this computer)';
+  $('aiOut').className='ai-out'; $('aiOut').textContent=''; $('aiActions').innerHTML='';
+  try{
+    const out=await ollama(A.prompt(text.slice(0,12000)));
+    aiResult={kind,text:out};
+    $('aiState').textContent='';
+    $('aiOut').textContent=out;
+    const acts=kind==='title'?[['Use as title','title']]:[['Insert at end','insert']];
+    if(kind==='grammar') acts.push(['Replace note text','replace']);
+    acts.push(['Discard','discard']);
+    $('aiActions').innerHTML=acts.map(([l,a],i)=>`<button class="${i===0?'btn-primary':'btn-ghost'}" data-ai-act="${a}">${l}</button>`).join('');
+  }catch(err){
+    $('aiState').textContent='';
+    $('aiOut').className='ai-out bad';
+    $('aiOut').textContent=err.message;
+    $('aiActions').innerHTML='<button class="btn-ghost" data-ai-act="discard">Close</button>';
+  }
+}
+
+/* ---------- Canvas: dump anything, AI organises it into checklists ---------- */
+const CANVAS_KEY='canvasText', CANVAS_MAX=20000;
+function setCanvasStatus(t){$('canvasStatus').textContent=t;}
+function saveCanvas(){try{localStorage.setItem(CANVAS_KEY,$('canvasText').value);}catch{}}
+/* ---------- deadlines: find a date in a point ---------- */
+const WEEKDAYS=['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+const MON_RE='(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)';
+function parseDue(text,now=new Date()){
+  const t=String(text).toLowerCase();
+  const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const plus=n=>{const d=new Date(today);d.setDate(d.getDate()+n);return fmtDate(d);};
+  const ymd=(y,m,d)=>{const x=new Date(y,m,d);return x.getMonth()===m&&x.getDate()===d?fmtDate(x):'';};
+  let m=/\b(\d{4})-(\d{1,2})-(\d{1,2})\b/.exec(t);
+  if(m) return ymd(+m[1],+m[2]-1,+m[3]);
+  if(/\btoday\b/.test(t)) return plus(0);
+  if(/\btomorrow\b/.test(t)) return plus(1);
+  m=/\bin\s+(\d{1,3})\s+(day|week|month)s?\b/.exec(t);
+  if(m) return plus(+m[1]*({day:1,week:7,month:30})[m[2]]);
+  m=new RegExp(`\\b(next\\s+)?(${WEEKDAYS.join('|')})\\b`).exec(t);
+  if(m){let diff=(WEEKDAYS.indexOf(m[2])-today.getDay()+7)%7; if(diff===0||m[1]) diff+=7; return plus(diff);}
+  const mi=w=>MONTHS.findIndex(x=>x.startsWith(w.slice(0,3)));
+  const fromParts=(day,mon,year)=>{
+    let y=year?+year:today.getFullYear();
+    let out=ymd(y,mon,day);
+    if(out && !year){const c=new Date(y,mon,day); if(c<today && (today-c)>30*864e5) out=ymd(y+1,mon,day);}
+    return out;
+  };
+  m=new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?\\s+(?:of\\s+)?${MON_RE}\\b(?:,?\\s+(\\d{4}))?`).exec(t);
+  if(m) return fromParts(+m[1],mi(m[2]),m[3]);
+  m=new RegExp(`\\b${MON_RE}\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?\\b(?:,?\\s+(\\d{4}))?`).exec(t);
+  if(m) return fromParts(+m[2],mi(m[1]),m[3]);
+  return '';
+}
+/* ---------- organise: one point per line, sorted by topic ---------- */
+function canvasPoints(raw){
+  return raw.split('\n')
+    .map(l=>l.replace(/^\s*(?:[-*•]\s*(?:\[[ xX]?\]\s*)?|\d+[.)]\s+)?/,'').trim())
+    .filter(Boolean).slice(0,200);
+}
+function organisePrompt(points){
+  const existing=spaces.length?spaces.join(', '):'none yet';
+  return `You sort short points from a messy note into topics. Each point has a number.
+Rules:
+- Every number gets exactly one topic. Points about the same subject get the SAME topic name (for example "Fundraising" or "Groceries"). Different subjects get different topics.
+- A topic is a short name of 1 to 4 words, in the same language as the points.
+- "space" is the best fitting existing space, chosen from: ${existing}. If none fits, propose a short new space name. Use "" only when nothing fits.
+- "due" is the deadline as YYYY-MM-DD when the point states one, otherwise "". Today is ${fmtDate(new Date())}.
+- Do not rewrite the points and do not invent facts.
+Reply with ONLY a JSON object in this shape:
+{"points":[{"n":1,"topic":"Fundraising","space":"Work","due":""}]}
+
+POINTS:
+${points.map((p,i)=>`${i+1}. ${p}`).join('\n')}`;
+}
+function parseOrganised(reply,points){
+  const bad='The AI reply could not be read as a list of points. Your text is still on the canvas; try Organise again.';
+  const a=reply.indexOf('{'), b=reply.lastIndexOf('}');
+  if(a<0||b<=a) throw new Error(bad);
+  let obj; try{obj=JSON.parse(reply.slice(a,b+1));}catch{throw new Error(bad);}
+  if(!obj||!Array.isArray(obj.points)) throw new Error(bad);
+  const byN=new Map();
+  for(const p of obj.points) if(p&&Number.isInteger(+p.n)) byN.set(+p.n,p);
+  return points.map((text,i)=>{
+    const p=byN.get(i+1)||{};
+    const topic=String(p.topic||'').trim().slice(0,60)||'Other points';
+    const space=String(p.space||'').trim().slice(0,40);
+    const modelDue=/^\d{4}-\d{2}-\d{2}$/.test(p.due||'')?p.due:'';
+    return {text,topic,space,due:parseDue(text)||modelDue};
+  });
+}
+// One note per topic, one checklist line per point. The reminder is the earliest deadline.
+function groupOrganised(items){
+  const groups=new Map();
+  for(const it of items){
+    const key=it.topic.toLowerCase();
+    if(!groups.has(key)) groups.set(key,{title:it.topic,items:[],spaces:new Map()});
+    const g=groups.get(key); g.items.push(it);
+    if(it.space){const k=it.space.toLowerCase(); const e=g.spaces.get(k)||{name:it.space,n:0}; e.n++; g.spaces.set(k,e);}
+  }
+  return [...groups.values()].map(g=>{
+    const best=[...g.spaces.values()].sort((a,b)=>b.n-a.n)[0];
+    const dues=g.items.map(i=>i.due).filter(Boolean).sort();
+    return {title:g.title,space:best?best.name:'',reminder:dues[0]||'',
+      lines:g.items.map(i=>i.due?`${i.text} (due ${dayLabel(i.due)})`:i.text)};
+  });
+}
+async function createFromOrganised(notes){
+  const created=[];
+  for(const g of notes){
+    let category='';
+    if(g.space&&g.space.toLowerCase()!=='unsorted'){
+      const hit=spaces.find(s=>s.toLowerCase()===g.space.toLowerCase());
+      if(hit) category=hit;
+      else { category=g.space; await put(SPACES,{name:category,order:Date.now()}); spaces.push(category); }
+    }
+    const body=g.lines.map(l=>'- [ ] '+l).join('\n');
+    const n={id:newId(),title:g.title,body:sanitize(linesToHTML(body)),format:'html',category,reminder:g.reminder||'',created:Date.now(),updated:Date.now()};
+    await put(STORE,n);
+    created.push(n);
+  }
+  return created;
+}
+async function organiseCanvas(){
+  const snapshot=$('canvasText').value;
+  const raw=snapshot.trim();
+  if(!raw){setCanvasStatus('Nothing to organise yet. Write something first.');return;}
+  if(raw.length>CANVAS_MAX){setCanvasStatus(`That is over ${CANVAS_MAX.toLocaleString()} characters. Split it into smaller parts.`);return;}
+  const points=canvasPoints(raw);
+  if(!points.length){setCanvasStatus('Nothing to organise yet. Write something first.');return;}
+  const btn=$('organiseBtn'); btn.disabled=true;
+  setCanvasStatus('Organising in the background… you can keep working.');
+  try{
+    const reply=await ollama(organisePrompt(points),240000);
+    const notes=groupOrganised(parseOrganised(reply,points));
+    const created=await createFromOrganised(notes);
+    if($('canvasText').value===snapshot){$('canvasText').value='';saveCanvas();}
+    lastOrganised={ids:created.map(n=>n.id),raw:snapshot};
+    const reminders=created.filter(n=>n.reminder).length;
+    setCanvasStatus(`${points.length} point${points.length===1?'':'s'} sorted into ${created.length} note${created.length===1?'':'s'}`+
+      (reminders?`, ${reminders} reminder${reminders===1?'':'s'} set.`:'.'));
+    $('undoText').textContent=`Created: ${created.map(n=>n.title).join(', ')}`;
+    $('undoBar').classList.remove('hide');
+    await refresh();
+  }catch(err){
+    setCanvasStatus(err.message);
+  }finally{ btn.disabled=false; }
+}
+async function undoOrganise(){
+  if(!lastOrganised) return;
+  await leave();
+  for(const id of lastOrganised.ids){ await remove(STORE,id); }
+  $('canvasText').value=lastOrganised.raw; saveCanvas();
+  lastOrganised=null;
+  $('undoBar').classList.add('hide');
+  setCanvasStatus('Undone. Your text is back on the canvas.');
+  await refresh();
+}
+
+/* ---------- Ask your notes: date-aware retrieval + local AI ---------- */
+const MONTHS=['january','february','march','april','may','june','july','august','september','october','november','december'];
+const MONTH_ABBR=MONTHS.map(m=>m.slice(0,3));
+const STOP=new Set(('a an the and or but of to in on at for from with by about as is are was were be been do did does done doing i me my we our you your it its this that these those what which who whom when where how why have has had get got say said tell give show list all any some anything something notes note write wrote things thing stuff last next past recent recently ago day days week weeks month months year years today yesterday since during before after around topic regarding related any').split(' '));
+const dayStart=(y,m,d)=>new Date(y,m,d).getTime();
+function timeWindow(q,now){
+  const s=q.toLowerCase(); const y=now.getFullYear(), m=now.getMonth(), d=now.getDate(), dow=(now.getDay()+6)%7;
+  if(/\btoday\b/.test(s)) return [dayStart(y,m,d), now.getTime()+1];
+  if(/\byesterday\b/.test(s)) return [dayStart(y,m,d-1), dayStart(y,m,d)];
+  if(/\bthis week\b/.test(s)) return [dayStart(y,m,d-dow), now.getTime()+1];
+  if(/\blast week\b/.test(s)) return [dayStart(y,m,d-dow-7), dayStart(y,m,d-dow)];
+  if(/\bthis month\b/.test(s)) return [dayStart(y,m,1), now.getTime()+1];
+  if(/\blast month\b/.test(s)) return [dayStart(y,m-1,1), dayStart(y,m,1)];
+  if(/\bthis year\b/.test(s)) return [dayStart(y,0,1), now.getTime()+1];
+  if(/\blast year\b/.test(s)) return [dayStart(y-1,0,1), dayStart(y,0,1)];
+  const n=s.match(/\blast (\d+) (day|week|month)s?\b/);
+  if(n){const k=+n[1], unit=n[2];
+    const start=unit==='day'?dayStart(y,m,d-k):unit==='week'?dayStart(y,m,d-7*k):dayStart(y,m-k,d);
+    return [start, now.getTime()+1];}
+  const mm=s.match(/\b(?:in|of|during|since)\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)\b(?:\s+(\d{4}))?/)
+        || s.match(/\b(january|february|march|april|june|july|august|september|october|november|december)\b(?:\s+(\d{4}))?/);
+  if(mm){
+    const idx=MONTHS.findIndex(x=>x.startsWith(mm[1].slice(0,3)));
+    const yr=mm[2]?+mm[2]:(idx>m?y-1:y);
+    return [dayStart(yr,idx,1), dayStart(yr,idx+1,1)];
+  }
+  return null;
+}
+const MONTH_WORDS=new Set([...MONTHS,...MONTH_ABBR,'sept']);
+const stem=w=>w.length>4?w.replace(/(ing|ed|es|s)$/,''):w;
+function keywords(q){
+  const words=q.toLowerCase().match(/[a-z][a-z'-]*/g)||[];
+  return [...new Set(words.filter(w=>w.length>2&&!STOP.has(w)&&!MONTH_WORDS.has(w)))];
+}
+function scoreNote(n,kws){
+  const toks=new Set(((n.title||'')+' '+notePlain(n)).toLowerCase().match(/[a-z][a-z'-]*/g)?.map(stem)||[]);
+  const titleToks=new Set(((n.title||'').toLowerCase().match(/[a-z][a-z'-]*/g)||[]).map(stem));
+  let score=0;
+  for(const k of kws){ const sk=stem(k); if(toks.has(sk)) score+=1+(titleToks.has(sk)?1:0); }
+  return score;
+}
+function activityDate(n,win){
+  if(win){const inW=t=>t>=win[0]&&t<win[1]; if(inW(n.created)) return n.created; if(inW(n.updated)) return n.updated;}
+  return n.updated||n.created;
+}
+function findNotes(question,now=new Date()){
+  const win=timeWindow(question,now);
+  const kws=keywords(question);
+  const inW=t=>win&&t>=win[0]&&t<win[1];
+  const pool=notes.filter(n=>!win||inW(n.created)||inW(n.updated));
+  let hits;
+  if(kws.length){
+    hits=pool.map(n=>({n,s:scoreNote(n,kws)})).filter(x=>x.s>0)
+      .sort((a,b)=>b.s-a.s||b.n.updated-a.n.updated).slice(0,15).map(x=>x.n);
+  }else{
+    hits=[...pool].sort((a,b)=>b.updated-a.updated).slice(0,30);
+  }
+  hits.sort((a,b)=>activityDate(a,win)-activityDate(b,win));
+  const label=win?`${fmtDate(win[0])} to ${fmtDate(win[1]-1)}`:'all time';
+  return {win,kws,label,hits};
+}
+function appendMsg(kind,text){
+  const div=document.createElement('div');
+  div.className=kind==='user'?'msg-user':'msg-bot'+(kind==='err'?' err':'');
+  div.textContent=text;
+  $('chatLog').appendChild(div);
+  return div;
+}
+function addSources(parent,hits){
+  if(!hits.length) return;
+  const box=document.createElement('div'); box.className='src';
+  for(const n of hits){
+    const b=document.createElement('button'); b.type='button';
+    b.textContent=`${n.title||'Untitled note'} · ${fmtDate(activityDate(n,null))}`;
+    b.onclick=()=>openNote(n.id);
+    box.appendChild(b);
+  }
+  parent.appendChild(box);
+}
+async function askNotes(question){
+  await flush();
+  const {label,kws,hits}=findNotes(question);
+  const bot=appendMsg('bot','Searching your notes…');
+  const topics=kws.length?kws.join(', '):'none';
+  if(!hits.length){
+    const parts=["I couldn't find any notes"];
+    if(kws.length) parts.push(`about ${kws.map(k=>'"'+k+'"').join(', ')}`);
+    if(label!=='all time') parts.push(`from ${label}`);
+    bot.textContent=parts.join(' ')+'.';
+    return;
+  }
+  const blocks=hits.map(n=>`--- NOTE\nTitle: ${n.title||'Untitled note'}\nDate: ${fmtDate(activityDate(n,null))}\n${notePlain(n).slice(0,1200)}`).join('\n\n');
+  const prompt=`You answer questions about the user's own notes. Use ONLY the notes below. Each note has a date. If the notes do not answer the question, say so plainly. For questions about what the user did, list the activities in date order and name the date and note title for each one, in brackets. Do not invent anything.
+
+QUESTION: ${question}
+
+NOTES:
+${blocks}`;
+  try{
+    bot.textContent=await ollama(prompt,180000);
+  }catch(err){
+    bot.textContent=err.message; bot.classList.add('err');
+    return;
+  }
+  const srcWrap=document.createElement('div');
+  bot.after(srcWrap);
+  addSources(srcWrap,hits);
+  const meta=document.createElement('div'); meta.className='meta-line';
+  meta.textContent=`Searched ${notes.length} notes · ${hits.length} sent to the AI · dates: ${label} · topics: ${topics}`;
+  srcWrap.after(meta);
+}
+
+/* ---------- dialogs ---------- */
+let dialogSave=null;
+function openDialog(title,desc,html,onSave,setup,okLabel){
+  $('modalTitle').textContent=title; $('modalDesc').textContent=desc; $('modalFields').innerHTML=html;
+  $('confirmModal').textContent=okLabel||'Save';
+  dialogSave=onSave; $('modal').classList.add('show');
+  if(setup) setup();
+  const first=$('modalFields').querySelector('input'); if(first) first.focus();
+}
+function closeDialog(){$('modal').classList.remove('show');dialogSave=null;}
+function openSettings(){
+  const fileNote=`<div class="setup-note"><b>Works fully offline.</b> Any model you have downloaded with Ollama runs here, and nothing is sent anywhere. Cloud models are not used, so the AI never leaves this computer.${location.protocol==='file:'?' If Ollama refuses the connection, open the folder through a local server (python -m http.server 8000) and visit http://localhost:8000.':''}</div>`;
+  openDialog('AI setup and privacy','Localnotes works without AI. The AI runs on this computer through Ollama.',
+    `<div class="privacy-box"><b>100% private, on this device.</b><br>Your notes are saved only in this browser on this computer. The AI runs locally through Ollama, so your text is never sent to a server. The app makes no network requests except to the Ollama address below. Clearing this browser's site data deletes your notes, so export a backup from time to time.</div>
+     <label class="field">Ollama address<input id="oAddr" value="${esc(ollamaBase())}"></label>
+     <label class="field">Model<input id="oModel" list="oModels" value="${esc(ollamaModel())}"><datalist id="oModels"></datalist></label>
+     <button class="btn-ghost" id="oTest" type="button">Test connection</button>
+     <p class="msg" id="oMsg"></p>${fileNote}`,
+    async()=>{
+      localStorage.ollamaUrl=$('oAddr').value.trim().replace(/\/+$/,'')||OLLAMA_DEFAULT;
+      localStorage.ollamaModel=$('oModel').value.trim()||'llama3.2';
+      await checkOllama();
+    },
+    ()=>{$('oTest').onclick=testConnection;});
+}
+async function testConnection(){
+  const base=($('oAddr').value.trim().replace(/\/+$/,''))||OLLAMA_DEFAULT;
+  const msg=$('oMsg'); msg.className='msg'; msg.textContent='Checking…';
+  try{
+    const names=await ollamaModels(base);
+    $('oModels').innerHTML=names.map(n=>`<option value="${esc(n)}">`).join('');
+    msg.className='msg good';
+    msg.textContent=names.length?`Connected. Installed models: ${names.join(', ')}`:'Connected, but no models are installed. Run: ollama pull llama3.2';
+  }catch{
+    msg.className='msg bad'; msg.textContent=ollamaHelp(base);
+  }
+}
+function download(data,name,type){
+  const u=URL.createObjectURL(new Blob([data],{type}));
+  const a=document.createElement('a'); a.href=u; a.download=name; a.click();
+  setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+  const n=e.target.closest('[data-note]');
+  if(n) openNote(n.dataset.note);
+  if(!e.target.closest('#aiMenu,#aiBtn')) $('aiMenu').classList.add('hide');
+});
+$('spaces').addEventListener('click',e=>{
+  const t=e.target.closest('[data-toggle]'); if(t){toggleGroup(t.dataset.toggle);return;}
+  const d=e.target.closest('[data-del]'); if(d){deleteSpace(d.dataset.del);return;}
+  const s=e.target.closest('[data-space]'); if(s){setFilter(s.dataset.space);}
+});
+$('collapseAll').onclick=()=>{
+  const names=spaces.concat(['Unsorted']);
+  const c=getCollapsed();
+  const allCollapsed=names.every(n=>c.includes(n));
+  setCollapsed(allCollapsed?[]:names);
+  renderTree();
+};
+$('brand').onclick=()=>{leave().then(showWelcome);closeSidebar();};
+$('welcomeCanvas').onclick=$('canvasBtn').onclick=async()=>{await leave();renderTree();showView('canvasView');closeSidebar();$('canvasText').focus();};
+$('welcomeChat').onclick=$('chatBtn').onclick=async()=>{await leave();renderTree();showView('chatView');closeSidebar();$('chatInput').focus();};
+$('newNote').onclick=createNote;
+$('overviewNew').onclick=createNote;
+$('resetAll').onclick=()=>{
+  openDialog('Reset all notes','This deletes every note in this browser. Your spaces stay. This cannot be undone. Export a backup first if you might need the notes.',
+    '<label class="field">Type RESET to confirm<input id="resetWord" type="text" autocomplete="off"></label><p class="msg bad hide" id="resetMsg"></p>',
+    async()=>{
+      if($('resetWord').value.trim()!=='RESET'){$('resetMsg').textContent='Type RESET in capitals to confirm.';$('resetMsg').classList.remove('hide');return false;}
+      clearTimeout(timer); timer=null; dirty=false; active=null;
+      const all=await getAll(STORE);
+      for(const n of all) await remove(STORE,n.id);
+      notes=[];
+      await refresh(); showOverview();
+    },null,'Reset everything');
+};
+$('allBtn').onclick=()=>setFilter('');
+$('search').addEventListener('input',async()=>{
+  const v=$('search').value.trim();
+  if(v){ await leave(); query=v; showView('overviewView'); renderOverview(); closeSidebar(); }
+  else { query=''; if(!$('overviewView').classList.contains('hide')) renderOverview(); renderTree(); }
+});
+document.addEventListener('keydown',e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('search').focus();}
+  if(e.key==='Escape'){closeDialog();$('aiMenu').classList.add('hide');closeSidebar();}
+});
+$('addSpace').onclick=()=>openDialog('New space','Spaces group related notes. Deleting a space moves its notes to Unsorted.',
+  '<label class="field">Space name<input id="dlgName" maxlength="40" placeholder="e.g. Recipes"></label>',
+  async()=>{
+    const name=$('dlgName').value.trim();
+    if(!name){alert('Please enter a name.');return false;}
+    if(name==='Unsorted'||spaces.some(s=>s.toLowerCase()===name.toLowerCase())){alert('That space already exists.');return false;}
+    await put(SPACES,{name,order:Date.now()});
+    await refresh();
+  });
+async function deleteNoteById(id){
+  const n=notes.find(x=>x.id===id);
+  if(!n) return;
+  if(!confirm(`Delete "${n.title||'this note'}"? This cannot be undone.`)) return;
+  if(active===id){ clearTimeout(timer); timer=null; dirty=false; active=null; }
+  await remove(STORE,id);
+  notes=notes.filter(x=>x.id!==id);
+  await refresh();
+  if(!$('editorView').classList.contains('hide')&&active===null) showOverview();
+  else if(!$('welcome').classList.contains('hide')) showWelcome();
+  else renderAll();
+}
+document.addEventListener('click',e=>{
+  const d=e.target.closest('[data-del-note]'); if(!d) return;
+  e.preventDefault(); e.stopPropagation();
+  deleteNoteById(d.dataset.delNote);
+},true);
+$('deleteNote').onclick=async()=>{
+  if(!active) return;
+  const n=notes.find(x=>x.id===active);
+  if(!confirm(`Delete "${n&&n.title?n.title:'this note'}"? This cannot be undone.`)) return;
+  clearTimeout(timer); timer=null; dirty=false;
+  await remove(STORE,active);
+  active=null;
+  await refresh(); showOverview();
+};
+$('noteTitle').addEventListener('input',scheduleSave);
+$('noteTitle').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();editor.focus();}});
+$('category').addEventListener('change',scheduleSave);
+editor.addEventListener('input',scheduleSave);
+editor.addEventListener('change',e=>{
+  const cb=e.target;
+  if(cb.matches&&cb.matches('input[type=checkbox]')){
+    cb.toggleAttribute('checked',cb.checked);
+    const todo=cb.closest('.todo'); if(todo) todo.classList.toggle('done',cb.checked);
+    scheduleSave();
+  }
+});
+editor.addEventListener('keydown',e=>{
+  if(e.key!=='Enter'||e.shiftKey) return;
+  const node=getSelection().anchorNode;
+  const el=node&&(node.nodeType===1?node:node.parentElement);
+  const todo=el&&el.closest('.todo');
+  if(!todo) return;
+  e.preventDefault();
+  const span=todo.querySelector('span');
+  if(!span.textContent.trim()){
+    const p=document.createElement('div'); p.appendChild(document.createElement('br'));
+    todo.replaceWith(p); editor.focus(); placeCaret(p,0);
+  }else{
+    const nt=makeTodo(); todo.after(nt); placeCaret(nt.querySelector('span'),0);
+  }
+  scheduleSave();
+});
+editor.addEventListener('paste',e=>{
+  e.preventDefault();
+  const html=e.clipboardData.getData('text/html');
+  if(html) document.execCommand('insertHTML',false,sanitize(html));
+  else document.execCommand('insertText',false,e.clipboardData.getData('text/plain'));
+});
+document.addEventListener('selectionchange',()=>{
+  const s=getSelection(); if(!s.rangeCount) return;
+  const r=s.getRangeAt(0);
+  if(editor.contains(r.commonAncestorContainer)){savedRange=r.cloneRange();updateToolbar();}
+});
+$('toolbar').addEventListener('mousedown',e=>{if(e.target.closest('button'))e.preventDefault();});
+$('toolbar').onclick=e=>{const b=e.target.closest('[data-cmd]');if(b)exec(b.dataset.cmd);};
+$('blockFmt').onchange=e=>exec('formatBlock',e.target.value);
+$('textColors').onclick=e=>{const b=e.target.closest('[data-fore]');if(b)exec('foreColor',b.dataset.fore);};
+$('hiColors').onclick=e=>{const b=e.target.closest('[data-hi]');if(!b)return;
+  if(!document.execCommand('hiliteColor',false,b.dataset.hi)) document.execCommand('backColor',false,b.dataset.hi);
+  scheduleSave();};
+$('todoBtn').onclick=insertTodo;
+$('linkBtn').onclick=insertLink;
+$('aiBtn').onclick=e=>{e.stopPropagation();$('aiMenu').classList.toggle('hide');};
+$('aiMenu').onclick=e=>{const b=e.target.closest('[data-ai]');if(b)runAI(b.dataset.ai);};
+$('aiActions').onclick=e=>{
+  const b=e.target.closest('[data-ai-act]'); if(!b||!aiResult) return;
+  const a=b.dataset.aiAct, out=aiResult.text;
+  if(a==='title'){$('noteTitle').value=out.replace(/^["'#\s]+|["'\s.]+$/g,'').slice(0,120);scheduleSave();}
+  if(a==='insert'){editor.insertAdjacentHTML('beforeend',linesToHTML(out));scheduleSave();}
+  if(a==='replace'&&confirm('Replace the whole note with this text? Formatting will be removed.')){editor.innerHTML=linesToHTML(out);scheduleSave();}
+  aiPanelHide();
+};
+$('ollamaStatus').onclick=openSettings;
+$('settingsBtn').onclick=openSettings;
+$('confirmModal').onclick=async()=>{
+  if(!dialogSave) return closeDialog();
+  const ok=await dialogSave();
+  if(ok!==false) closeDialog();
+};
+$('cancelModal').onclick=closeDialog;
+$('calPrev').onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1);renderHome();};
+$('calNext').onclick=()=>{calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1);renderHome();};
+$('calGrid').onclick=e=>{const b=e.target.closest('[data-day]');if(!b)return;calPick=calPick===b.dataset.day?'':b.dataset.day;renderHome();};
+$('upClear').onclick=()=>{calPick='';renderHome();};
+$('reminderInput').addEventListener('change',scheduleSave);
+$('reminderClear').onclick=()=>{$('reminderInput').value='';scheduleSave();};
+$('modal').onclick=e=>{if(e.target.id==='modal')closeDialog();};
+$('menuBtn').onclick=()=>{const open=$('sidebar').classList.toggle('open');$('scrim').classList.toggle('hide',!open);};
+$('scrim').onclick=closeSidebar;
+$('canvasText').addEventListener('input',saveCanvas);
+$('canvasText').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();organiseCanvas();}});
+$('organiseBtn').onclick=organiseCanvas;
+$('canvasClear').onclick=()=>{if($('canvasText').value.trim()&&!confirm('Clear everything on the canvas? It cannot be undone.'))return;$('canvasText').value='';saveCanvas();setCanvasStatus('');};
+$('undoBtn').onclick=undoOrganise;
+$('chatForm').onsubmit=async e=>{
+  e.preventDefault();
+  const q=$('chatInput').value.trim(); if(!q) return;
+  $('chatInput').value=''; $('chatSend').disabled=true;
+  appendMsg('user',q);
+  try{ await askNotes(q); }
+  finally{ $('chatSend').disabled=false; $('chatLog').lastElementChild?.scrollIntoView({block:'end'}); }
+};
+/* ---------- Markdown export ---------- */
+function htmlToMd(html){
+  const t=document.createElement('template'); t.innerHTML=String(html||'');
+  const inline=node=>{
+    let s='';
+    for(const c of node.childNodes){
+      if(c.nodeType===3){s+=c.textContent.replace(/\s+/g,' ');continue;}
+      if(c.nodeType!==1) continue;
+      const tag=c.tagName, inner=inline(c), trim=inner.trim();
+      if(tag==='BR') s+='\n';
+      else if(tag==='B'||tag==='STRONG') s+=trim?`**${trim}**`:'';
+      else if(tag==='I'||tag==='EM') s+=trim?`*${trim}*`:'';
+      else if(tag==='S'||tag==='STRIKE') s+=trim?`~~${trim}~~`:'';
+      else if(tag==='MARK') s+=trim?`==${trim}==`:'';
+      else if(tag==='A'){const h=c.getAttribute('href'); s+=h?`[${trim||h}](${h})`:inner;}
+      else if(tag==='INPUT') continue;
+      else s+=inner;
+    }
+    return s;
+  };
+  const blocks=node=>{
+    const out=[];
+    for(const c of node.childNodes){
+      if(c.nodeType===3){const x=c.textContent.replace(/\s+/g,' ').trim(); if(x) out.push(x); continue;}
+      if(c.nodeType!==1) continue;
+      const tag=c.tagName;
+      if(/^H[1-3]$/.test(tag)) out.push('','#'.repeat(+tag[1])+' '+inline(c).trim(),'');
+      else if(tag==='BLOCKQUOTE') blocks(c).forEach(l=>out.push(l?'> '+l:'>'));
+      else if(tag==='UL'||tag==='OL'){let i=1; for(const li of c.children) out.push((tag==='OL'?(i++)+'. ':'- ')+inline(li).trim());}
+      else if(c.classList.contains('todo')){
+        const cb=c.querySelector('input'), txt=(c.querySelector('span')?.textContent||'').trim();
+        out.push(`- [${cb&&cb.checked?'x':' '}] ${txt}`);
+      }
+      else if((tag==='DIV'||tag==='P')&&c.querySelector('div,p,ul,ol,h1,h2,h3,blockquote')) out.push(...blocks(c));
+      else out.push(inline(c).trim());
+    }
+    return out;
+  };
+  return blocks(t.content).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+}
+function noteToMd(n){
+  const body=n.format==='html'?htmlToMd(n.body):String(n.body||'').trim();
+  const fm=['---',`title: ${JSON.stringify(n.title||'Untitled note')}`,`space: ${JSON.stringify(n.category||'Unsorted')}`,
+    `created: ${new Date(n.created).toISOString()}`,`updated: ${new Date(n.updated).toISOString()}`];
+  if(n.reminder) fm.push(`reminder: ${n.reminder}`);
+  fm.push('---','');
+  return fm.join('\n')+`# ${n.title||'Untitled note'}\n\n`+(body?body+'\n':'');
+}
+const safeName=s=>(String(s||'').replace(/[\\/:*?"<>|\x00-\x1f]/g,'-').replace(/\s+/g,' ').trim().slice(0,80))||'untitled';
+async function exportMdFolder(all){
+  const dir=await window.showDirectoryPicker({mode:'readwrite'});
+  const used=new Set(); let count=0;
+  for(const n of all){
+    const space=n.category||'Unsorted';
+    const sub=await dir.getDirectoryHandle(safeName(space),{create:true});
+    let name=safeName(n.title)+'.md';
+    if(used.has(space+'/'+name)) name=safeName(n.title)+' '+n.id.slice(0,6)+'.md';
+    used.add(space+'/'+name);
+    const fh=await sub.getFileHandle(name,{create:true});
+    const w=await fh.createWritable(); await w.write(noteToMd(n)); await w.close(); count++;
+  }
+  return count;
+}
+function exportMdSingle(all){
+  const text=all.map(noteToMd).join('\n\n---\n\n');
+  download(text,`localnotes-notes-${fmtDate(new Date())}.md`,'text/markdown');
+  return all.length;
+}
+
+/* ---------- encrypted backup (PBKDF2-SHA-256 + AES-256-GCM) ---------- */
+const KDF_ITER=310000;
+async function deriveKey(pass,salt,iter){
+  const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']);
+  return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:iter,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+const toB64=u=>{let s='';for(let i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);};
+const fromB64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function encryptBackup(json,pass){
+  const salt=crypto.getRandomValues(new Uint8Array(16)), iv=crypto.getRandomValues(new Uint8Array(12));
+  const key=await deriveKey(pass,salt,KDF_ITER);
+  const ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(json)));
+  return JSON.stringify({app:'localnotes',format:'encrypted',version:1,kdf:'PBKDF2-SHA-256',iterations:KDF_ITER,salt:toB64(salt),iv:toB64(iv),data:toB64(ct)},null,2);
+}
+async function decryptBackup(text,pass){
+  const e=JSON.parse(text);
+  const key=await deriveKey(pass,fromB64(e.salt),e.iterations);
+  const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:fromB64(e.iv)},key,fromB64(e.data));
+  return new TextDecoder().decode(pt);
+}
+
+/* ---------- export dialog ---------- */
+$('exportBtn').onclick=()=>{
+  const canFolder=!!window.showDirectoryPicker;
+  openDialog('Export your notes','Your notes stay portable. Pick a format.',
+    `<label class="opt"><input type="radio" name="exf" value="md-folder" ${canFolder?'':'disabled'}><span>Markdown folder<small>${canFolder?'One .md file per note, in a folder per space. Chooses the folder on your computer.':'Needs Chrome or Edge (folder access is not available in this browser).'}</small></span></label>
+     <label class="opt"><input type="radio" name="exf" value="md-file" checked><span>Markdown file<small>All notes in one .md file, with front matter.</small></span></label>
+     <label class="opt"><input type="radio" name="exf" value="enc"><span>Encrypted backup<small>Protected by a passphrase. Restore it with Import. Saved as .localnotes.</small></span></label>
+     <label class="opt"><input type="radio" name="exf" value="json"><span>Plain JSON backup<small>Readable, not encrypted. Anyone with the file can read your notes.</small></span></label>
+     <div id="passWrap" class="hide"><label class="field">Passphrase (at least 12 characters)<input id="exPass" type="password" autocomplete="new-password"></label>
+     <label class="field">Confirm passphrase<input id="exPass2" type="password" autocomplete="new-password"></label></div>
+     <p class="msg" id="exMsg"></p>`,
+    async()=>{
+      const choice=document.querySelector('input[name=exf]:checked')?.value||'md-file';
+      const msg=$('exMsg'); msg.className='msg bad'; msg.textContent='';
+      await flush();
+      const all=await getAll(STORE), spc=await getAll(SPACES);
+      const stamp=fmtDate(new Date());
+      try{
+        if(choice==='md-folder'){
+          const n=await exportMdFolder(all.sort((a,b)=>a.created-b.created));
+          alert(`Saved ${n} Markdown file${n===1?'':'s'}.`);
+        }else if(choice==='md-file'){
+          const n=exportMdSingle(all.sort((a,b)=>a.created-b.created));
+          alert(`Saved ${n} note${n===1?'':'s'} to one Markdown file.`);
+        }else if(choice==='enc'){
+          const p1=$('exPass').value, p2=$('exPass2').value;
+          if(p1.length<12){msg.textContent='Use at least 12 characters.';return false;}
+          if(p1!==p2){msg.textContent='The two passphrases do not match.';return false;}
+          const data={app:'localnotes',version:4,exported:new Date().toISOString(),notes:all,spaces:spc};
+          download(await encryptBackup(JSON.stringify(data),p1),`localnotes-backup-${stamp}.localnotes`,'application/json');
+        }else{
+          const data={app:'localnotes',version:4,exported:new Date().toISOString(),notes:all,spaces:spc};
+          download(JSON.stringify(data,null,2),`localnotes-backup-${stamp}.json`,'application/json');
+        }
+      }catch(err){
+        if(err&&err.name==='AbortError') return false;
+        msg.textContent='Export failed: '+(err&&err.message||'unknown error');
+        return false;
+      }
+    },null,'Export');
+  const sync=()=>{const enc=document.querySelector('input[name=exf]:checked')?.value==='enc';$('passWrap').classList.toggle('hide',!enc);};
+  document.querySelectorAll('input[name=exf]').forEach(r=>r.addEventListener('change',sync));
+  sync();
+};
+
+/* ---------- import ---------- */
+async function importPayload(d){
+  if(!Array.isArray(d.notes)) throw new Error('bad backup');
+  await leave();
+  let count=0;
+  for(const n of d.notes){
+    if(!n||typeof n.id!=='string') continue;
+    const item={id:n.id,title:String(n.title||''),body:String(n.body||''),category:String(n.category||''),
+      created:n.created||Date.now(),updated:n.updated||Date.now()};
+    if(n.reminder&&/^\d{4}-\d{2}-\d{2}$/.test(n.reminder)) item.reminder=n.reminder;
+    if(n.format==='html'){item.format='html';item.body=sanitize(item.body);}
+    await put(STORE,item); count++;
+    if(item.category&&!spaces.includes(item.category)) await put(SPACES,{name:item.category,order:Date.now()});
+  }
+  for(const s of d.spaces||[]) if(s&&s.name) await put(SPACES,{name:String(s.name),order:s.order||Date.now()});
+  await refresh(); showOverview();
+  alert(`Imported ${count} note${count===1?'':'s'}.`);
+}
+$('importBtn').onclick=()=>$('importFile').click();
+$('importFile').onchange=async e=>{
+  const f=e.target.files[0]; e.target.value='';
+  if(!f) return;
+  const text=await f.text();
+  let env=null; try{env=JSON.parse(text);}catch{}
+  if(env&&env.format==='encrypted'){
+    openDialog('Open encrypted backup','Enter the passphrase you used when you exported this backup.',
+      '<label class="field">Passphrase<input id="imPass" type="password" autocomplete="current-password"></label><p class="msg bad hide" id="imMsg"></p>',
+      async()=>{
+        try{
+          const json=await decryptBackup(text,$('imPass').value);
+          await importPayload(JSON.parse(json));
+        }catch(err){
+          if(err&&err.name==='OperationError'){$('imMsg').textContent='Wrong passphrase, or the file is damaged.';$('imMsg').classList.remove('hide');return false;}
+          alert('That backup file could not be read.');
+        }
+      },null,'Open');
+    return;
+  }
+  try{
+    await importPayload(JSON.parse(text));
+  }catch{
+    alert('That backup file could not be read.');
+  }
+};
+window.addEventListener('pagehide',()=>{if(dirty)flush();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&dirty)flush();});
+window.addEventListener('focus',()=>{checkOllama();});
+
+
+/* ---------- light / dark ---------- */
+const SUN='<svg class="ic" aria-hidden="true"><use href="#i-sun"/></svg>', MOON='<svg class="ic" aria-hidden="true"><use href="#i-moon"/></svg>';
+function currentTheme(){
+  const t=document.documentElement.getAttribute('data-theme');
+  if(t) return t;
+  return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+}
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  $('themeBtn').innerHTML=t==='dark'?SUN:MOON;
+  $('themeBtn').title=t==='dark'?'Switch to light mode':'Switch to dark mode';
+  try{localStorage.setItem('stillnote.theme',t);}catch{}
+}
+$('themeBtn').onclick=()=>applyTheme(currentTheme()==='dark'?'light':'dark');
+try{const saved=localStorage.getItem('stillnote.theme'); if(saved==='light'||saved==='dark') applyTheme(saved); else $('themeBtn').innerHTML=currentTheme()==='dark'?SUN:MOON;}catch{ $('themeBtn').innerHTML=MOON; }
+/* ---------- start ---------- */
+(async()=>{
+  fillSwatches();
+  db=await openDB();
+  const ls=k=>{try{return localStorage.getItem(k)||'';}catch{return '';}};
+  const last=ls('lastNote'), lastView=ls('lastView');
+  try{$('canvasText').value=localStorage.getItem(CANVAS_KEY)||'';}catch{}
+  await refresh();
+  checkOllama();
+  if(lastView==='canvasView'){ showView('canvasView'); }
+  else if(lastView==='chatView'){ showView('chatView'); }
+  else if(last&&notes.some(n=>n.id===last)){ await openNote(last); }
+  else if(lastView==='overviewView'){ showOverview(); }
+  else { showWelcome(); }
+})().catch(()=>{document.body.innerHTML='<p style="padding:30px">Could not open local notebook storage. Please use a recent version of Chrome or Edge and open this file from its original folder.</p>';});
+})();
+</script>
+</body>
+</html>

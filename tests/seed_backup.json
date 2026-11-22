@@ -1,0 +1,59 @@
+{
+ "notes": [
+  {
+   "id": "seed0",
+   "title": "Pitch deck feedback",
+   "body": "Investors want a clearer market slide. Fundraising target is 500k.",
+   "format": "html",
+   "category": "",
+   "created": 1791212400000,
+   "updated": 1791212400000
+  },
+  {
+   "id": "seed1",
+   "title": "Fundraising call with Anna",
+   "body": "Anna offered intros for the fundraising round. Follow up next week.",
+   "format": "html",
+   "category": "",
+   "created": 1792508400000,
+   "updated": 1792508400000
+  },
+  {
+   "id": "seed2",
+   "title": "Groceries",
+   "body": "milk eggs bread",
+   "format": "html",
+   "category": "",
+   "created": 1791817200000,
+   "updated": 1791817200000
+  },
+  {
+   "id": "seed3",
+   "title": "Gym plan",
+   "body": "Monday legs, Wednesday push.",
+   "format": "html",
+   "category": "",
+   "created": 1791471600000,
+   "updated": 1791471600000
+  },
+  {
+   "id": "seed4",
+   "title": "Fundraising ideas",
+   "body": "Ideas for fundraising: grants, angels.",
+   "format": "html",
+   "category": "",
+   "created": 1789052400000,
+   "updated": 1789052400000
+  },
+  {
+   "id": "seed5",
+   "title": "Fundraising wrap-up",
+   "body": "Round closed on fundraising, great news.",
+   "format": "html",
+   "category": "",
+   "created": 1793718000000,
+   "updated": 1793718000000
+  }
+ ],
+ "spaces": []
+}
