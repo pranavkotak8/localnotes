@@ -13,11 +13,10 @@ A private notes app in a single HTML file. No account, no cloud, no server, no i
 
 [**Try it in 30 seconds**](#quick-start) · [Privacy](#privacy) · [Why trust it](#why-trust-it) · [Honest limits](#what-it-does-not-do-yet)
 
-<br>
 
 <br><br>
 
-<img src="docs/canvas-dark.png" alt="The Canvas in dark mode: messy points on the left, sorted by AI into checklists" width="92%">
+<img src="docs/demo.gif" alt="The Canvas in light mode: messy points on the left, sorted by AI into checklists" width="92%">
 
 </div>
 
